@@ -18,6 +18,13 @@ interface EnvConfig {
   RATE_LIMIT_MAX_REQUESTS: number;
   UPLOAD_MAX_SIZE: number;
   UPLOAD_ALLOWED_TYPES: string;
+  // Storage
+  STORAGE_PROVIDER: 'local' | 'supabase';
+  STORAGE_BUCKET_NAME: string;
+  STORAGE_BASE_URL: string;
+  STORAGE_LOCAL_PATH: string;
+  SUPABASE_URL: string;
+  SUPABASE_SERVICE_ROLE_KEY: string;
 }
 
 function getEnv(key: string, defaultValue?: string): string {
@@ -62,6 +69,13 @@ export const env: EnvConfig = {
   RATE_LIMIT_MAX_REQUESTS: getEnvNumber('RATE_LIMIT_MAX_REQUESTS', 100),
   UPLOAD_MAX_SIZE: getEnvNumber('UPLOAD_MAX_SIZE', 5242880),
   UPLOAD_ALLOWED_TYPES: getEnv('UPLOAD_ALLOWED_TYPES', 'image/jpeg,image/png,application/pdf'),
+  // Storage
+  STORAGE_PROVIDER: getEnv('STORAGE_PROVIDER', 'local') as EnvConfig['STORAGE_PROVIDER'],
+  STORAGE_BUCKET_NAME: getEnv('STORAGE_BUCKET_NAME', 'smart-invoice-hub'),
+  STORAGE_BASE_URL: getEnv('STORAGE_BASE_URL', ''),
+  STORAGE_LOCAL_PATH: getEnv('STORAGE_LOCAL_PATH', './uploads'),
+  SUPABASE_URL: getEnv('SUPABASE_URL', ''),
+  SUPABASE_SERVICE_ROLE_KEY: getEnv('SUPABASE_SERVICE_ROLE_KEY', ''),
 };
 
 export const isDevelopment = env.NODE_ENV === 'development';

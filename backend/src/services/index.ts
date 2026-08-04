@@ -5,3 +5,5 @@ export * from './category.service';
 export * from './brand.service';
 export * from './product.service';
 export * from './customer.service';
+export * from './invoice.service';
+export * from './invoice-calculation.service';

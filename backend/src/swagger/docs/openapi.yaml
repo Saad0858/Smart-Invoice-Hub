@@ -1250,6 +1250,8 @@ tags:
     description: Reports and analytics
   - name: Activity Logs
     description: Audit trail
+  - name: Storage
+    description: File storage management
 
 paths:
   /health:
@@ -1360,6 +1362,342 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+  # Storage
+  /storage/upload/image:
+    post:
+      tags: [Storage]
+      summary: Upload an image file
+      description: |
+        Upload an image file to storage (ADMIN only).
+        
+        **Supported formats:** JPEG, PNG, WebP, SVG
+        **Maximum file size:** 5 MB
+        **Allowed folders:** company, products, signatures
+        
+        The file will be renamed to `<uuid>_<timestamp>.<extension>` format
+        and stored in the specified folder.
+      operationId: uploadImage
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Image file to upload
+      parameters:
+        - name: folder
+          in: query
+          description: Target folder for the upload
+          required: false
+          schema:
+            type: string
+            enum: [company, products, signatures]
+            default: products
+      responses:
+        '201':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/UploadedFile'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /storage/upload/signature:
+    post:
+      tags: [Storage]
+      summary: Upload a signature file
+      description: |
+        Upload a signature image to storage (ADMIN only).
+        
+        **Supported formats:** JPEG, PNG, WebP, SVG
+        **Maximum file size:** 5 MB
+        **Folder:** signatures (fixed)
+        
+        The file will be renamed to `<uuid>_<timestamp>.<extension>` format
+        and stored in the signatures folder.
+      operationId: uploadSignature
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Signature image file to upload
+      responses:
+        '201':
+          description: Signature uploaded successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/UploadedFile'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '413':
+          description: File too large
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /storage/{path}:
+    delete:
+      tags: [Storage]
+      summary: Delete a file
+      description: |
+        Delete a file from storage by its path (ADMIN only).
+        
+        The path should be the relative path returned from upload (e.g., `products/3f21d88d_1754300000.webp`).
+      operationId: deleteFile
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+          description: File path to delete
+      responses:
+        '200':
+          description: File deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Path parameter is required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Admin access required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /storage/url/{path}:
+    get:
+      tags: [Storage]
+      summary: Get public URL for a file
+      description: |
+        Get the public URL for a file in storage.
+        
+        The path should be the relative path returned from upload (e.g., `products/3f21d88d_1754300000.webp`).
+      operationId: getFileUrl
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: path
+          in: path
+          required: true
+          schema:
+            type: string
+          description: File path to get URL for
+      responses:
+        '200':
+          description: File URL retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          url:
+                            type: string
+                            format: uri
+                            example: "https://example.com/storage/products/3f21d88d_1754300000.webp"
+        '400':
+          description: Path parameter is required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: File not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /storage/config:
+    get:
+      tags: [Storage]
+      summary: Get storage configuration
+      description: Returns storage configuration including provider, bucket, and upload limits.
+      operationId: getStorageConfig
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Storage configuration
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/StorageConfig'
+
+  # Storage schemas
+  UploadedFile:
+    type: object
+    properties:
+      fileName:
+        type: string
+        example: "3f21d88d_1754300000.webp"
+      originalName:
+        type: string
+        example: "company-logo.png"
+      folder:
+        type: string
+        enum: [company, products, signatures]
+        example: "products"
+      path:
+        type: string
+        example: "products/3f21d88d_1754300000.webp"
+      url:
+        type: string
+        format: uri
+        example: "https://example.com/storage/products/3f21d88d_1754300000.webp"
+      mimeType:
+        type: string
+        example: "image/webp"
+      size:
+        type: integer
+        example: 154321
+      provider:
+        type: string
+        enum: [local, supabase]
+        example: "supabase"
+
+  StorageConfig:
+    type: object
+    properties:
+      provider:
+        type: string
+        enum: [local, supabase]
+        example: "supabase"
+      bucket:
+        type: string
+        example: "smart-invoice-hub"
+      baseUrl:
+        type: string
+        format: uri
+        example: "https://api.example.com"
+      folders:
+        type: array
+        items:
+          type: string
+          enum: [company, products, signatures]
+        example: ["company", "products", "signatures"]
+      limits:
+        type: object
+        properties:
+          fileSize:
+            type: integer
+            example: 5242880
+          allowedMimeTypes:
+            type: array
+            items:
+              type: string
+            example: ["image/jpeg", "image/png", "image/webp", "image/svg+xml"]
+          allowedExtensions:
+            type: array
+            items:
+              type: string
+            example: [".jpg", ".jpeg", ".png", ".webp", ".svg"]
 
   /categories/{id}:
     get:
@@ -2065,6 +2403,52 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /invoices/statistics:
+    get:
+      tags: [Invoices]
+      summary: Get invoice statistics
+      description: Returns invoice statistics (ADMIN, ACCOUNTANT)
+      operationId: getInvoiceStatistics
+      responses:
+        '200':
+          description: Invoice statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /invoices/next-number:
+    get:
+      tags: [Invoices]
+      summary: Get next invoice number
+      description: Returns the next invoice number that will be assigned (ADMIN, ACCOUNTANT, SALES)
+      operationId: getNextInvoiceNumber
+      responses:
+        '200':
+          description: Next invoice number
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /invoices/{id}:
     get:
       tags: [Invoices]
@@ -2128,10 +2512,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-    delete:
+
+  /invoices/{id}/cancel:
+    post:
       tags: [Invoices]
       summary: Cancel invoice
-      description: Cancels an invoice (sets status to CANCELLED)
+      description: Cancels an invoice (sets status to CANCELLED and restores stock)
       operationId: cancelInvoice
       parameters:
         - name: id
@@ -2143,6 +2529,39 @@ paths:
       responses:
         '200':
           description: Invoice cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Invoice not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Invoice already cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /invoices/{id}/duplicate:
+    post:
+      tags: [Invoices]
+      summary: Duplicate invoice
+      description: Creates a new draft invoice as a copy of an existing invoice
+      operationId: duplicateInvoice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '201':
+          description: Invoice duplicated
           content:
             application/json:
               schema:

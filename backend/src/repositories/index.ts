@@ -5,3 +5,4 @@ export * from './category.repository';
 export * from './brand.repository';
 export * from './product.repository';
 export * from './customer.repository';
+export * from './invoice.repository';

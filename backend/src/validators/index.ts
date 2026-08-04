@@ -5,3 +5,4 @@ export * from './category.validators';
 export * from './brand.validators';
 export * from './product.validators';
 export * from './customer.validators';
+export * from './invoice.validators';
