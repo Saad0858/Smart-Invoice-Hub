@@ -1174,6 +1174,214 @@ components:
           type: string
           format: date-time
 
+    # Dashboard Schemas
+    DashboardSummary:
+      type: object
+      properties:
+        todaySales:
+          type: number
+          format: decimal
+          example: 150000.00
+        todayInvoices:
+          type: integer
+          example: 5
+        monthlySales:
+          type: number
+          format: decimal
+          example: 2500000.00
+        monthlyInvoices:
+          type: integer
+          example: 120
+        totalCustomers:
+          type: integer
+          example: 250
+        totalProducts:
+          type: integer
+          example: 500
+        lowStockCount:
+          type: integer
+          example: 12
+        gstCollected:
+          type: number
+          format: decimal
+          example: 450000.00
+
+    SalesOverviewData:
+      type: object
+      properties:
+        period:
+          type: string
+          example: "month"
+        totalSales:
+          type: number
+          format: decimal
+          example: 2500000.00
+        totalInvoices:
+          type: integer
+          example: 120
+        totalGstAmount:
+          type: number
+          format: decimal
+          example: 450000.00
+        averageOrderValue:
+          type: number
+          format: decimal
+          example: 20833.33
+        invoiceStatusBreakdown:
+          type: object
+          properties:
+            draft:
+              type: integer
+              example: 10
+            generated:
+              type: integer
+              example: 100
+            cancelled:
+              type: integer
+              example: 10
+        paymentStatusBreakdown:
+          type: object
+          properties:
+            pending:
+              type: integer
+              example: 50
+            partial:
+              type: integer
+              example: 20
+            paid:
+              type: integer
+              example: 50
+
+    RecentInvoiceData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        invoiceNumber:
+          type: string
+          example: "SIH-2026-000123"
+        invoiceDate:
+          type: string
+          format: date-time
+        customerName:
+          type: string
+          example: "Acme Corporation Pvt Ltd"
+        grandTotal:
+          type: number
+          format: decimal
+          example: 50000.00
+        status:
+          type: string
+          enum: [DRAFT, GENERATED, CANCELLED]
+          example: "GENERATED"
+        paymentStatus:
+          type: string
+          enum: [PENDING, PARTIAL, PAID]
+          example: "PAID"
+
+    TopProductData:
+      type: object
+      properties:
+        productId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+          example: "PROD-001"
+        productName:
+          type: string
+          example: "Steel Rods 12mm"
+        totalQuantitySold:
+          type: number
+          format: decimal
+          example: 5000
+        totalRevenue:
+          type: number
+          format: decimal
+          example: 2500000.00
+        gstRate:
+          type: string
+          enum: [ZERO, FIVE, TWELVE, EIGHTEEN, TWENTY_EIGHT]
+          example: "EIGHTEEN"
+
+    LowStockProductData:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sku:
+          type: string
+          example: "PROD-001"
+        name:
+          type: string
+          example: "Steel Rods 12mm"
+        currentStock:
+          type: number
+          format: decimal
+          example: 10
+        minStock:
+          type: number
+          format: decimal
+          example: 50
+        unit:
+          type: string
+          enum: [PCS, KG, GRAM, LTR, ML, BOX, BAG, ROLL, MTR, SQFT, TON]
+          example: "KG"
+        categoryName:
+          type: string
+          example: "Raw Materials"
+        brandName:
+          type: string
+          example: "SteelCo"
+
+    CustomerOverviewData:
+      type: object
+      properties:
+        totalCustomers:
+          type: integer
+          example: 250
+        businessCustomers:
+          type: integer
+          example: 200
+        individualCustomers:
+          type: integer
+          example: 50
+        activeCustomers:
+          type: integer
+          example: 230
+        inactiveCustomers:
+          type: integer
+          example: 20
+        outstandingBalance:
+          type: number
+          format: decimal
+          example: 1500000.00
+
+    RevenueTrendDataPoint:
+      type: object
+      properties:
+        period:
+          type: string
+          example: "2026-01"
+        revenue:
+          type: number
+          format: decimal
+          example: 2500000.00
+        invoiceCount:
+          type: integer
+          example: 120
+        gstAmount:
+          type: number
+          format: decimal
+          example: 450000.00
+
+    RevenueTrendData:
+      type: array
+      items:
+        $ref: '#/components/schemas/RevenueTrendDataPoint'
+
   parameters:
     RequestId:
       name: X-Request-ID
@@ -1252,6 +1460,8 @@ tags:
     description: Audit trail
   - name: Storage
     description: File storage management
+  - name: Dashboard
+    description: Executive dashboard and analytics
 
 paths:
   /health:
@@ -2875,6 +3085,342 @@ paths:
                 $ref: '#/components/schemas/SuccessResponse'
         '401':
           description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Dashboard
+  /dashboard/summary:
+    get:
+      tags: [Dashboard]
+      summary: Get dashboard summary
+      description: Returns key metrics for the executive dashboard including today's sales, monthly sales, customer counts, product counts, low stock alerts, and GST collected
+      operationId: getDashboardSummary
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Dashboard summary retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/DashboardSummary'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /dashboard/sales-overview:
+    get:
+      tags: [Dashboard]
+      summary: Get sales overview
+      description: Returns sales overview for a specific period (today, week, month, year, or custom date range) with invoice and payment status breakdowns
+      operationId: getSalesOverview
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          description: Time period for sales overview
+          required: false
+          schema:
+            type: string
+            enum: [today, week, month, year, custom]
+            default: month
+        - name: startDate
+          in: query
+          description: Start date for custom period (YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          description: End date for custom period (YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Sales overview retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/SalesOverviewData'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /dashboard/recent-invoices:
+    get:
+      tags: [Dashboard]
+      summary: Get recent invoices
+      description: Returns the latest invoices without line items
+      operationId: getRecentInvoices
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Number of invoices to return (max 50)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+      responses:
+        '200':
+          description: Recent invoices retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/RecentInvoiceData'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /dashboard/top-products:
+    get:
+      tags: [Dashboard]
+      summary: Get top products by quantity sold
+      description: Returns top-selling products calculated from invoice items, sorted by quantity sold
+      operationId: getTopProducts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Number of products to return (max 50)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+        - name: startDate
+          in: query
+          description: Start date for filtering (YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          description: End date for filtering (YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Top products retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/TopProductData'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /dashboard/low-stock:
+    get:
+      tags: [Dashboard]
+      summary: Get low stock products
+      description: Returns products where current stock is less than or equal to minimum stock threshold
+      operationId: getLowStockProducts
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Low stock products retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/LowStockProductData'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /dashboard/customer-overview:
+    get:
+      tags: [Dashboard]
+      summary: Get customer overview
+      description: Returns customer statistics including total, business/individual, active/inactive counts, and outstanding balance
+      operationId: getCustomerOverview
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Customer overview retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/CustomerOverviewData'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /dashboard/revenue-trend:
+    get:
+      tags: [Dashboard]
+      summary: Get revenue trend for charts
+      description: Returns chart-ready revenue trend data grouped by interval (daily, weekly, monthly)
+      operationId: getRevenueTrend
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: interval
+          in: query
+          description: Grouping interval for trend data
+          required: false
+          schema:
+            type: string
+            enum: [daily, weekly, monthly]
+            default: monthly
+        - name: startDate
+          in: query
+          description: Start date for trend data (YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          description: End date for trend data (YYYY-MM-DD)
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Revenue trend data retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/RevenueTrendData'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Insufficient permissions
           content:
             application/json:
               schema:

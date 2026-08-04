@@ -28,3 +28,9 @@ export const requireSales = requireRole(
   USER_ROLES.MANAGER,
   USER_ROLES.SALES
 );
+// Dashboard access: ADMIN, ACCOUNTANT, SALES (read-only analytics)
+export const requireDashboardAccess = requireRole(
+  USER_ROLES.ADMIN,
+  USER_ROLES.ACCOUNTANT,
+  USER_ROLES.SALES
+);

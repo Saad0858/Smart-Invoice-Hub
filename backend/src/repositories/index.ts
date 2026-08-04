@@ -6,3 +6,4 @@ export * from './brand.repository';
 export * from './product.repository';
 export * from './customer.repository';
 export * from './invoice.repository';
+export * from './dashboard.repository';

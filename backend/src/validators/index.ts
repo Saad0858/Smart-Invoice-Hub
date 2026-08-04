@@ -6,3 +6,4 @@ export * from './brand.validators';
 export * from './product.validators';
 export * from './customer.validators';
 export * from './invoice.validators';
+export * from './dashboard.validators';
