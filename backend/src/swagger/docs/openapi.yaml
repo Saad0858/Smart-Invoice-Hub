@@ -1,0 +1,264 @@
+openapi: 3.0.3
+info:
+  title: BillFlow ERP API
+  version: 1.0.0
+  description: |
+    GST Billing & Invoice Management System for Manufacturing Companies
+    
+    ## Overview
+    BillFlow ERP provides a comprehensive API for managing invoices, products, customers, and GST compliance.
+    
+    ## Authentication
+    All endpoints (except health) require JWT authentication via Bearer token.
+    
+    ## Rate Limiting
+    API requests are rate-limited to 100 requests per 15 minutes per IP.
+    
+    ## Versioning
+    API is versioned via URL path: `/api/v1`
+    
+    ## Response Format
+    All responses follow a consistent format:
+    ```json
+    {
+      "success": true,
+      "message": "Success",
+      "data": {}
+    }
+    ```
+    
+    ## Error Format
+    ```json
+    {
+      "success": false,
+      "message": "Error message",
+      "errors": [],
+      "timestamp": "2024-01-01T00:00:00.000Z",
+      "path": "/api/v1/resource",
+      "requestId": "uuid"
+    }
+    ```
+  contact:
+    name: BillFlow Team
+    email: support@billflow.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Development server
+  - url: https://api.billflow.com/api/v1
+    description: Production server
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Enter JWT token
+
+  schemas:
+    # Common schemas
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: Success
+        data:
+          type: object
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: Validation Failed
+        errors:
+          type: array
+          items:
+            type: object
+        timestamp:
+          type: string
+          format: date-time
+        path:
+          type: string
+        requestId:
+          type: string
+
+    PaginationParams:
+      type: object
+      properties:
+        page:
+          type: integer
+          minimum: 1
+          default: 1
+        limit:
+          type: integer
+          minimum: 1
+          maximum: 100
+          default: 20
+        sort:
+          type: string
+        order:
+          type: string
+          enum: [asc, desc]
+          default: asc
+        search:
+          type: string
+
+    PaginatedResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+            limit:
+              type: integer
+            total:
+              type: integer
+            totalPages:
+              type: integer
+            hasNext:
+              type: boolean
+            hasPrev:
+              type: boolean
+
+    # Health schemas
+    HealthCheck:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: BillFlow API is running.
+        version:
+          type: string
+          example: "1.0.0"
+
+    DetailedHealthCheck:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy]
+        timestamp:
+          type: string
+          format: date-time
+        uptime:
+          type: number
+        version:
+          type: string
+        environment:
+          type: string
+        checks:
+          type: object
+          properties:
+            database:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [healthy, unhealthy]
+                version:
+                  type: string
+                latency:
+                  type: number
+            memory:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [healthy, unhealthy]
+                used:
+                  type: number
+                total:
+                  type: number
+                percentage:
+                  type: number
+
+  parameters:
+    RequestId:
+      name: X-Request-ID
+      in: header
+      description: Request ID for tracing
+      required: false
+      schema:
+        type: string
+        format: uuid
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Health
+    description: Health check endpoints
+  - name: Authentication
+    description: Authentication and authorization
+  - name: Products
+    description: Product management
+  - name: Customers
+    description: Customer management
+  - name: Invoices
+    description: Invoice management
+  - name: Reports
+    description: Reports and analytics
+  - name: Settings
+    description: Company settings
+
+paths:
+  /health:
+    get:
+      tags: [Health]
+      summary: Basic health check
+      description: Returns basic API health status
+      operationId: getHealth
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthCheck'
+        '503':
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /health/detailed:
+    get:
+      tags: [Health]
+      summary: Detailed health check
+      description: Returns detailed health status including database and memory
+      operationId: getDetailedHealth
+      responses:
+        '200':
+          description: Detailed health status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DetailedHealthCheck'
+        '503':
+          description: Service unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
