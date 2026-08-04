@@ -193,6 +193,987 @@ components:
                 percentage:
                   type: number
 
+    # Auth schemas
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 1
+
+    LoginResponse:
+      type: object
+      properties:
+        user:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            fullName:
+              type: string
+            email:
+              type: string
+            role:
+              type: string
+              enum: [ADMIN, MANAGER, SALES, ACCOUNTANT, VIEWER]
+            isActive:
+              type: boolean
+            lastLogin:
+              type: string
+              format: date-time
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+        tokens:
+          type: object
+          properties:
+            accessToken:
+              type: string
+            refreshToken:
+              type: string
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        fullName:
+          type: string
+        email:
+          type: string
+        role:
+          type: string
+          enum: [ADMIN, MANAGER, SALES, ACCOUNTANT, VIEWER]
+        isActive:
+          type: boolean
+        lastLogin:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    # Category schemas
+    Category:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CategoryCreate:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+
+    CategoryUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        isActive:
+          type: boolean
+
+    # Brand schemas
+    Brand:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    BrandCreate:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+
+    BrandUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        isActive:
+          type: boolean
+
+    # Product schemas
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        barcode:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        categoryId:
+          type: string
+          format: uuid
+        category:
+          $ref: '#/components/schemas/Category'
+        brandId:
+          type: string
+          format: uuid
+        brand:
+          $ref: '#/components/schemas/Brand'
+        hsnCode:
+          type: string
+        gstRate:
+          type: string
+          enum: [ZERO, FIVE, TWELVE, EIGHTEEN, TWENTY_EIGHT]
+        unit:
+          type: string
+          enum: [PCS, KG, GRAM, LTR, ML, BOX, BAG, ROLL, MTR, SQFT, TON]
+        sellingPrice:
+          type: number
+          format: decimal
+        openingStock:
+          type: number
+          format: decimal
+        currentStock:
+          type: number
+          format: decimal
+        minStock:
+          type: number
+          format: decimal
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    ProductCreate:
+      type: object
+      required:
+        - sku
+        - name
+        - hsnCode
+        - gstRate
+        - unit
+        - sellingPrice
+      properties:
+        sku:
+          type: string
+          maxLength: 50
+        barcode:
+          type: string
+          maxLength: 50
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        categoryId:
+          type: string
+          format: uuid
+        brandId:
+          type: string
+          format: uuid
+        hsnCode:
+          type: string
+          maxLength: 20
+        gstRate:
+          type: string
+          enum: [ZERO, FIVE, TWELVE, EIGHTEEN, TWENTY_EIGHT]
+        unit:
+          type: string
+          enum: [PCS, KG, GRAM, LTR, ML, BOX, BAG, ROLL, MTR, SQFT, TON]
+        sellingPrice:
+          type: number
+          format: decimal
+          minimum: 0
+        openingStock:
+          type: number
+          format: decimal
+          default: 0
+        minStock:
+          type: number
+          format: decimal
+          default: 0
+
+    ProductUpdate:
+      type: object
+      properties:
+        sku:
+          type: string
+          maxLength: 50
+        barcode:
+          type: string
+          maxLength: 50
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+        categoryId:
+          type: string
+          format: uuid
+        brandId:
+          type: string
+          format: uuid
+        hsnCode:
+          type: string
+          maxLength: 20
+        gstRate:
+          type: string
+          enum: [ZERO, FIVE, TWELVE, EIGHTEEN, TWENTY_EIGHT]
+        unit:
+          type: string
+          enum: [PCS, KG, GRAM, LTR, ML, BOX, BAG, ROLL, MTR, SQFT, TON]
+        sellingPrice:
+          type: number
+          format: decimal
+          minimum: 0
+        minStock:
+          type: number
+          format: decimal
+        isActive:
+          type: boolean
+
+    ProductPaginatedResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Product'
+
+    # Customer schemas
+    Customer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        customerCode:
+          type: string
+          example: "CUST260001"
+        companyName:
+          type: string
+          example: "Acme Corporation Pvt Ltd"
+        contactPerson:
+          type: string
+          example: "John Smith"
+        gstNumber:
+          type: string
+          example: "27AAACA1234F1Z5"
+        panNumber:
+          type: string
+          example: "AAACA1234F"
+        phone:
+          type: string
+          example: "+91-22-25671234"
+        email:
+          type: string
+          example: "john.smith@acmecorp.com"
+        address:
+          type: string
+          example: "Plot No. 100, MIDC Industrial Area"
+        city:
+          type: string
+          example: "Mumbai"
+        state:
+          type: string
+          example: "Maharashtra"
+        stateCode:
+          type: string
+          example: "27"
+        country:
+          type: string
+          example: "India"
+        postalCode:
+          type: string
+          example: "400001"
+        customerType:
+          type: string
+          enum: [BUSINESS, INDIVIDUAL]
+          example: "BUSINESS"
+        creditLimit:
+          type: number
+          format: decimal
+          example: 500000
+        openingBalance:
+          type: number
+          format: decimal
+          example: 0
+        isActive:
+          type: boolean
+          example: true
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-01-15T10:30:00Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2026-01-15T10:30:00Z"
+
+    CustomerCreate:
+      type: object
+      required:
+        - companyName
+      properties:
+        customerCode:
+          type: string
+          maxLength: 20
+          readOnly: true
+          description: Auto-generated customer code (e.g., CUST260001)
+          example: "CUST260001"
+        companyName:
+          type: string
+          maxLength: 200
+          example: "Acme Corporation Pvt Ltd"
+        contactPerson:
+          type: string
+          maxLength: 100
+          example: "John Smith"
+        gstNumber:
+          type: string
+          maxLength: 15
+          pattern: '^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$'
+          example: "27AAACA1234F1Z5"
+        panNumber:
+          type: string
+          maxLength: 10
+          pattern: '^[A-Z]{5}[0-9]{4}[A-Z]{1}$'
+          example: "AAACA1234F"
+        phone:
+          type: string
+          maxLength: 20
+          example: "+91-22-25671234"
+        email:
+          type: string
+          format: email
+          example: "john.smith@acmecorp.com"
+        address:
+          type: string
+          example: "Plot No. 100, MIDC Industrial Area"
+        city:
+          type: string
+          example: "Mumbai"
+        state:
+          type: string
+          example: "Maharashtra"
+        stateCode:
+          type: string
+          maxLength: 2
+          pattern: '^[0-9]{2}$'
+          example: "27"
+        country:
+          type: string
+          default: "India"
+          example: "India"
+        postalCode:
+          type: string
+          example: "400001"
+        customerType:
+          type: string
+          enum: [BUSINESS, INDIVIDUAL]
+          default: BUSINESS
+          example: "BUSINESS"
+        creditLimit:
+          type: number
+          format: decimal
+          default: 0
+          minimum: 0
+          example: 500000
+        openingBalance:
+          type: number
+          format: decimal
+          default: 0
+          minimum: 0
+          example: 0
+
+    CustomerUpdate:
+      type: object
+      properties:
+        companyName:
+          type: string
+          maxLength: 200
+        contactPerson:
+          type: string
+          maxLength: 100
+        gstNumber:
+          type: string
+          maxLength: 15
+        panNumber:
+          type: string
+          maxLength: 10
+        phone:
+          type: string
+          maxLength: 20
+        email:
+          type: string
+          format: email
+        address:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        stateCode:
+          type: string
+          maxLength: 2
+        country:
+          type: string
+        postalCode:
+          type: string
+        customerType:
+          type: string
+          enum: [BUSINESS, INDIVIDUAL]
+        creditLimit:
+          type: number
+          format: decimal
+        openingBalance:
+          type: number
+          format: decimal
+        isActive:
+          type: boolean
+
+    CustomerPaginatedResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Customer'
+
+    # Company Settings schemas
+    CompanySettings:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        companyName:
+          type: string
+        gstNumber:
+          type: string
+        panNumber:
+          type: string
+        cinNumber:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+        website:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        stateCode:
+          type: string
+        postalCode:
+          type: string
+        country:
+          type: string
+        logoUrl:
+          type: string
+        bankName:
+          type: string
+        branch:
+          type: string
+        accountHolder:
+          type: string
+        accountNumber:
+          type: string
+        ifscCode:
+          type: string
+        upiId:
+          type: string
+        digitalSignature:
+          type: string
+        invoicePrefix:
+          type: string
+        invoiceSuffix:
+          type: string
+        nextInvoiceNumber:
+          type: integer
+        invoiceFooter:
+          type: string
+        primaryColor:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CompanySettingsUpdate:
+      type: object
+      properties:
+        companyName:
+          type: string
+          maxLength: 200
+          example: "BillFlow Manufacturing Pvt Ltd"
+        gstNumber:
+          type: string
+          pattern: '^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$'
+          example: "27AAACB1234F1Z5"
+        panNumber:
+          type: string
+          pattern: '^[A-Z]{5}[0-9]{4}[A-Z]{1}$'
+          example: "AAACB1234F"
+        cinNumber:
+          type: string
+          maxLength: 50
+          example: "U29100MH2020PTC123456"
+        phone:
+          type: string
+          pattern: '^[\\+]?[()]?[0-9]{1,3}[)]?[-\\s\\.]?[()]?[0-9]{1,3}[)]?[-\\s\\.]?[0-9]{4,6}$'
+          example: "+91-22-25671234"
+        email:
+          type: string
+          format: email
+          example: "info@billflowmanufacturing.com"
+        website:
+          type: string
+          format: uri
+          example: "https://billflowmanufacturing.com"
+        address:
+          type: string
+          example: "Plot No. 100, MIDC Industrial Area, Kupwad"
+        city:
+          type: string
+          maxLength: 100
+          example: "Sangli"
+        state:
+          type: string
+          maxLength: 100
+          example: "Maharashtra"
+        stateCode:
+          type: string
+          pattern: '^[0-9]{2}$'
+          example: "27"
+        postalCode:
+          type: string
+          maxLength: 10
+          example: "416436"
+        country:
+          type: string
+          maxLength: 100
+          example: "India"
+        logoUrl:
+          type: string
+          format: uri
+          example: "https://billflowmanufacturing.com/logo.png"
+        bankName:
+          type: string
+          maxLength: 200
+          example: "HDFC Bank Ltd"
+        branch:
+          type: string
+          maxLength: 200
+          example: "Sangli MIDC Branch"
+        accountHolder:
+          type: string
+          maxLength: 200
+          example: "BillFlow Manufacturing Pvt Ltd"
+        accountNumber:
+          type: string
+          maxLength: 50
+          example: "50200012345678"
+        ifscCode:
+          type: string
+          pattern: '^[A-Z]{4}0[A-Z0-9]{6}$'
+          example: "HDFC0001234"
+        upiId:
+          type: string
+          pattern: '^[a-zA-Z0-9.\\-]{2,256}@[a-zA-Z]{2,64}$'
+          example: "billflow.mfg@hdfcbank"
+        digitalSignature:
+          type: string
+          example: "base64-encoded-signature-image"
+        invoicePrefix:
+          type: string
+          maxLength: 10
+          example: "SIH"
+        invoiceSuffix:
+          type: string
+          maxLength: 10
+          example: ""
+        nextInvoiceNumber:
+          type: integer
+          minimum: 1
+          example: 1
+        invoiceFooter:
+          type: string
+          example: "Thank you for your business! | Subject to Sangli Jurisdiction | E.&O.E."
+        primaryColor:
+          type: string
+          pattern: '^#[0-9A-Fa-f]{6}$'
+          example: "#2563EB"
+
+    # Invoice schemas
+    InvoiceItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        productId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        productName:
+          type: string
+        hsnCode:
+          type: string
+        unit:
+          type: string
+          enum: [PCS, KG, GRAM, LTR, ML, BOX, BAG, ROLL, MTR, SQFT, TON]
+        gstRate:
+          type: string
+          enum: [ZERO, FIVE, TWELVE, EIGHTEEN, TWENTY_EIGHT]
+        quantity:
+          type: number
+          format: decimal
+        unitPrice:
+          type: number
+          format: decimal
+        discount:
+          type: number
+          format: decimal
+        taxableAmount:
+          type: number
+          format: decimal
+        cgstAmount:
+          type: number
+          format: decimal
+        sgstAmount:
+          type: number
+          format: decimal
+        igstAmount:
+          type: number
+          format: decimal
+        lineTotal:
+          type: number
+          format: decimal
+        createdAt:
+          type: string
+          format: date-time
+
+    InvoiceItemCreate:
+      type: object
+      required:
+        - productId
+        - sku
+        - productName
+        - hsnCode
+        - unit
+        - gstRate
+        - quantity
+        - unitPrice
+      properties:
+        productId:
+          type: string
+          format: uuid
+        sku:
+          type: string
+        productName:
+          type: string
+        hsnCode:
+          type: string
+        unit:
+          type: string
+          enum: [PCS, KG, GRAM, LTR, ML, BOX, BAG, ROLL, MTR, SQFT, TON]
+        gstRate:
+          type: string
+          enum: [ZERO, FIVE, TWELVE, EIGHTEEN, TWENTY_EIGHT]
+        quantity:
+          type: number
+          format: decimal
+          minimum: 0.001
+        unitPrice:
+          type: number
+          format: decimal
+          minimum: 0
+        discount:
+          type: number
+          format: decimal
+          default: 0
+
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        invoiceNumber:
+          type: string
+        invoiceDate:
+          type: string
+          format: date-time
+        dueDate:
+          type: string
+          format: date-time
+        customerId:
+          type: string
+          format: uuid
+        customer:
+          $ref: '#/components/schemas/Customer'
+        subtotal:
+          type: number
+          format: decimal
+        taxableAmount:
+          type: number
+          format: decimal
+        discountAmount:
+          type: number
+          format: decimal
+        transportCharges:
+          type: number
+          format: decimal
+        otherCharges:
+          type: number
+          format: decimal
+        cgstAmount:
+          type: number
+          format: decimal
+        sgstAmount:
+          type: number
+          format: decimal
+        igstAmount:
+          type: number
+          format: decimal
+        totalGstAmount:
+          type: number
+          format: decimal
+        roundOff:
+          type: number
+          format: decimal
+        grandTotal:
+          type: number
+          format: decimal
+        status:
+          type: string
+          enum: [DRAFT, GENERATED, CANCELLED]
+        notes:
+          type: string
+        terms:
+          type: string
+        pdfUrl:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvoiceItem'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    InvoiceCreate:
+      type: object
+      required:
+        - customerId
+        - invoiceDate
+        - items
+      properties:
+        customerId:
+          type: string
+          format: uuid
+        invoiceDate:
+          type: string
+          format: date
+        dueDate:
+          type: string
+          format: date
+        discountAmount:
+          type: number
+          format: decimal
+          default: 0
+        transportCharges:
+          type: number
+          format: decimal
+          default: 0
+        otherCharges:
+          type: number
+          format: decimal
+          default: 0
+        notes:
+          type: string
+        terms:
+          type: string
+        items:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/InvoiceItemCreate'
+
+    InvoiceUpdate:
+      type: object
+      properties:
+        dueDate:
+          type: string
+          format: date
+        discountAmount:
+          type: number
+          format: decimal
+        transportCharges:
+          type: number
+          format: decimal
+        otherCharges:
+          type: number
+          format: decimal
+        notes:
+          type: string
+        terms:
+          type: string
+        status:
+          type: string
+          enum: [DRAFT, GENERATED, CANCELLED]
+
+    InvoicePaginatedResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/Invoice'
+
+    # Activity Log schemas
+    ActivityLog:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+        module:
+          type: string
+          enum: [AUTH, PRODUCTS, CUSTOMERS, INVOICES, SETTINGS, REPORTS, USERS]
+        action:
+          type: string
+          enum: [CREATE, READ, UPDATE, DELETE, LOGIN, LOGOUT, EXPORT, PRINT, CANCEL, GENERATE_PDF]
+        description:
+          type: string
+        entity:
+          type: string
+        entityId:
+          type: string
+        oldValue:
+          type: object
+        newValue:
+          type: object
+        ipAddress:
+          type: string
+        userAgent:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    ActivityLogPaginatedResponse:
+      allOf:
+        - $ref: '#/components/schemas/PaginatedResponse'
+        - type: object
+          properties:
+            data:
+              type: array
+              items:
+                $ref: '#/components/schemas/ActivityLog'
+
+    # Invoice Sequence
+    InvoiceSequence:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        year:
+          type: integer
+        prefix:
+          type: string
+        current:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
   parameters:
     RequestId:
       name: X-Request-ID
@@ -202,6 +1183,48 @@ components:
       schema:
         type: string
         format: uuid
+    PageParam:
+      name: page
+      in: query
+      description: Page number
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    LimitParam:
+      name: limit
+      in: query
+      description: Items per page
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    SortParam:
+      name: sort
+      in: query
+      description: Sort field
+      required: false
+      schema:
+        type: string
+    OrderParam:
+      name: order
+      in: query
+      description: Sort order
+      required: false
+      schema:
+        type: string
+        enum: [asc, desc]
+        default: asc
+    SearchParam:
+      name: search
+      in: query
+      description: Search term
+      required: false
+      schema:
+        type: string
 
 security:
   - bearerAuth: []
@@ -211,16 +1234,22 @@ tags:
     description: Health check endpoints
   - name: Authentication
     description: Authentication and authorization
+  - name: Categories
+    description: Product category management
+  - name: Brands
+    description: Product brand management
   - name: Products
     description: Product management
   - name: Customers
     description: Customer management
   - name: Invoices
     description: Invoice management
-  - name: Reports
-    description: Reports and analytics
   - name: Settings
     description: Company settings
+  - name: Reports
+    description: Reports and analytics
+  - name: Activity Logs
+    description: Audit trail
 
 paths:
   /health:
@@ -258,6 +1287,1175 @@ paths:
                 $ref: '#/components/schemas/DetailedHealthCheck'
         '503':
           description: Service unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Categories
+  /categories:
+    get:
+      tags: [Categories]
+      summary: List all categories
+      description: Returns paginated list of categories
+      operationId: listCategories
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SortParam'
+        - $ref: '#/components/parameters/OrderParam'
+        - $ref: '#/components/parameters/SearchParam'
+        - name: isActive
+          in: query
+          description: Filter by active status
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [Categories]
+      summary: Create a new category
+      description: Creates a new product category
+      operationId: createCategory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryCreate'
+      responses:
+        '201':
+          description: Category created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Category already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /categories/{id}:
+    get:
+      tags: [Categories]
+      summary: Get category by ID
+      description: Returns a single category by ID
+      operationId: getCategory
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Category found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [Categories]
+      summary: Update category
+      description: Updates an existing category
+      operationId: updateCategory
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CategoryUpdate'
+      responses:
+        '200':
+          description: Category updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Categories]
+      summary: Delete category
+      description: Soft deletes a category
+      operationId: deleteCategory
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Category deleted
+        '404':
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Brands
+  /brands:
+    get:
+      tags: [Brands]
+      summary: List all brands
+      description: Returns paginated list of brands
+      operationId: listBrands
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SortParam'
+        - $ref: '#/components/parameters/OrderParam'
+        - $ref: '#/components/parameters/SearchParam'
+        - name: isActive
+          in: query
+          description: Filter by active status
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of brands
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedResponse'
+    post:
+      tags: [Brands]
+      summary: Create a new brand
+      description: Creates a new product brand
+      operationId: createBrand
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BrandCreate'
+      responses:
+        '201':
+          description: Brand created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Brand already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /brands/{id}:
+    get:
+      tags: [Brands]
+      summary: Get brand by ID
+      operationId: getBrand
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Brand found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Brand not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [Brands]
+      summary: Update brand
+      operationId: updateBrand
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BrandUpdate'
+      responses:
+        '200':
+          description: Brand updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+    delete:
+      tags: [Brands]
+      summary: Delete brand
+      operationId: deleteBrand
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Brand deleted
+        '404':
+          description: Brand not found
+
+  # Products
+  /products:
+    get:
+      tags: [Products]
+      summary: List all products
+      description: Returns paginated list of products with filters
+      operationId: listProducts
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SortParam'
+        - $ref: '#/components/parameters/OrderParam'
+        - $ref: '#/components/parameters/SearchParam'
+        - name: categoryId
+          in: query
+          description: Filter by category
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: brandId
+          in: query
+          description: Filter by brand
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: gstRate
+          in: query
+          description: Filter by GST rate
+          required: false
+          schema:
+            type: string
+            enum: [ZERO, FIVE, TWELVE, EIGHTEEN, TWENTY_EIGHT]
+        - name: isActive
+          in: query
+          description: Filter by active status
+          required: false
+          schema:
+            type: boolean
+        - name: lowStock
+          in: query
+          description: Filter products with stock below minimum
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of products
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductPaginatedResponse'
+    post:
+      tags: [Products]
+      summary: Create a new product
+      description: Creates a new product with full details
+      operationId: createProduct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductCreate'
+      responses:
+        '201':
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: SKU or barcode already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /products/{id}:
+    get:
+      tags: [Products]
+      summary: Get product by ID
+      operationId: getProduct
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Product found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [Products]
+      summary: Update product
+      operationId: updateProduct
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductUpdate'
+      responses:
+        '200':
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Products]
+      summary: Delete product (soft delete)
+      operationId: deleteProduct
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Product deleted
+        '404':
+          description: Product not found
+        '409':
+          description: Product has associated invoices
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Customers
+  /customers:
+    get:
+      tags: [Customers]
+      summary: List all customers
+      description: Returns paginated list of customers with filters
+      operationId: listCustomers
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SortParam'
+        - $ref: '#/components/parameters/OrderParam'
+        - $ref: '#/components/parameters/SearchParam'
+        - name: customerType
+          in: query
+          description: Filter by customer type
+          required: false
+          schema:
+            type: string
+            enum: [BUSINESS, INDIVIDUAL]
+        - name: state
+          in: query
+          description: Filter by state
+          required: false
+          schema:
+            type: string
+        - name: isActive
+          in: query
+          description: Filter by active status
+          required: false
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: List of customers
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerPaginatedResponse'
+              example:
+                success: true
+                message: "Success"
+                data:
+                  - id: "550e8400-e29b-41d4-a716-446655440000"
+                    customerCode: "CUST260001"
+                    companyName: "Acme Corporation Pvt Ltd"
+                    contactPerson: "John Smith"
+                    gstNumber: "27AAACA1234F1Z5"
+                    panNumber: "AAACA1234F"
+                    phone: "+91-22-25671234"
+                    email: "john.smith@acmecorp.com"
+                    address: "Plot No. 100, MIDC Industrial Area"
+                    city: "Mumbai"
+                    state: "Maharashtra"
+                    stateCode: "27"
+                    country: "India"
+                    postalCode: "400001"
+                    customerType: "BUSINESS"
+                    creditLimit: 500000
+                    openingBalance: 0
+                    currentBalance: 0
+                    isActive: true
+                    createdAt: "2026-01-15T10:30:00Z"
+                    updatedAt: "2026-01-15T10:30:00Z"
+                  - id: "550e8400-e29b-41d4-a716-446655440001"
+                    customerCode: "CUST260002"
+                    companyName: "Global Traders"
+                    contactPerson: "Jane Doe"
+                    gstNumber: "29BBBFG5678H2Z6"
+                    panNumber: "BBBFG5678H"
+                    phone: "+91-80-23456789"
+                    email: "jane.doe@globaltraders.com"
+                    address: "123 Brigade Road"
+                    city: "Bangalore"
+                    state: "Karnataka"
+                    stateCode: "29"
+                    country: "India"
+                    postalCode: "560001"
+                    customerType: "BUSINESS"
+                    creditLimit: 1000000
+                    openingBalance: 25000
+                    currentBalance: 25000
+                    isActive: true
+                    createdAt: "2026-01-16T14:20:00Z"
+                    updatedAt: "2026-01-16T14:20:00Z"
+                pagination:
+                  page: 1
+                  limit: 20
+                  total: 2
+                  totalPages: 1
+                  hasNext: false
+                  hasPrev: false
+    post:
+      tags: [Customers]
+      summary: Create a new customer
+      description: Creates a new customer (B2B or Individual). Customer code is auto-generated.
+      operationId: createCustomer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerCreate'
+            example:
+              companyName: "Acme Corporation Pvt Ltd"
+              contactPerson: "John Smith"
+              gstNumber: "27AAACA1234F1Z5"
+              panNumber: "AAACA1234F"
+              phone: "+91-22-25671234"
+              email: "john.smith@acmecorp.com"
+              address: "Plot No. 100, MIDC Industrial Area"
+              city: "Mumbai"
+              state: "Maharashtra"
+              stateCode: "27"
+              country: "India"
+              postalCode: "400001"
+              customerType: "BUSINESS"
+              creditLimit: 500000
+              openingBalance: 0
+      responses:
+        '201':
+          description: Customer created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                success: true
+                message: "Resource created successfully"
+                data:
+                  id: "550e8400-e29b-41d4-a716-446655440000"
+                  customerCode: "CUST260001"
+                  companyName: "Acme Corporation Pvt Ltd"
+                  contactPerson: "John Smith"
+                  gstNumber: "27AAACA1234F1Z5"
+                  panNumber: "AAACA1234F"
+                  phone: "+91-22-25671234"
+                  email: "john.smith@acmecorp.com"
+                  address: "Plot No. 100, MIDC Industrial Area"
+                  city: "Mumbai"
+                  state: "Maharashtra"
+                  stateCode: "27"
+                  country: "India"
+                  postalCode: "400001"
+                  customerType: "BUSINESS"
+                  creditLimit: 500000
+                  openingBalance: 0
+                  currentBalance: 0
+                  isActive: true
+                  createdAt: "2026-01-15T10:30:00Z"
+                  updatedAt: "2026-01-15T10:30:00Z"
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: GST number already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /customers/{id}:
+    get:
+      tags: [Customers]
+      summary: Get customer by ID
+      operationId: getCustomer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Customer found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+              example:
+                success: true
+                message: "Success"
+                data:
+                  id: "550e8400-e29b-41d4-a716-446655440000"
+                  customerCode: "CUST260001"
+                  companyName: "Acme Corporation Pvt Ltd"
+                  contactPerson: "John Smith"
+                  gstNumber: "27AAACA1234F1Z5"
+                  panNumber: "AAACA1234F"
+                  phone: "+91-22-25671234"
+                  email: "john.smith@acmecorp.com"
+                  address: "Plot No. 100, MIDC Industrial Area"
+                  city: "Mumbai"
+                  state: "Maharashtra"
+                  stateCode: "27"
+                  country: "India"
+                  postalCode: "400001"
+                  customerType: "BUSINESS"
+                  creditLimit: 500000
+                  openingBalance: 0
+                  currentBalance: 0
+                  isActive: true
+                  createdAt: "2026-01-15T10:30:00Z"
+                  updatedAt: "2026-01-15T10:30:00Z"
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [Customers]
+      summary: Update customer
+      operationId: updateCustomer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerUpdate'
+      responses:
+        '200':
+          description: Customer updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Customers]
+      summary: Delete customer (soft delete)
+      operationId: deleteCustomer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Customer deleted
+        '404':
+          description: Customer not found
+
+  # Invoices
+  /invoices:
+    get:
+      tags: [Invoices]
+      summary: List all invoices
+      description: Returns paginated list of invoices with filters
+      operationId: listInvoices
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SortParam'
+        - $ref: '#/components/parameters/OrderParam'
+        - $ref: '#/components/parameters/SearchParam'
+        - name: customerId
+          in: query
+          description: Filter by customer
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          description: Filter by status
+          required: false
+          schema:
+            type: string
+            enum: [DRAFT, GENERATED, CANCELLED]
+        - name: startDate
+          in: query
+          description: Filter by invoice date range start
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          description: Filter by invoice date range end
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: List of invoices
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvoicePaginatedResponse'
+    post:
+      tags: [Invoices]
+      summary: Create a new invoice
+      description: Creates a new invoice with items (calculates GST automatically)
+      operationId: createInvoice
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvoiceCreate'
+      responses:
+        '201':
+          description: Invoice created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Customer not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /invoices/{id}:
+    get:
+      tags: [Invoices]
+      summary: Get invoice by ID
+      description: Returns invoice with all items and customer details
+      operationId: getInvoice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Invoice found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Invoice not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [Invoices]
+      summary: Update invoice
+      description: Updates invoice (only DRAFT invoices can be updated)
+      operationId: updateInvoice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvoiceUpdate'
+      responses:
+        '200':
+          description: Invoice updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Invoice not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Cannot update non-DRAFT invoice
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Invoices]
+      summary: Cancel invoice
+      description: Cancels an invoice (sets status to CANCELLED)
+      operationId: cancelInvoice
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Invoice cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '404':
+          description: Invoice not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /invoices/{id}/pdf:
+    get:
+      tags: [Invoices]
+      summary: Download invoice PDF
+      description: Generates and returns PDF for the invoice
+      operationId: downloadInvoicePdf
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: PDF file
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Invoice not found
+
+  # Company Settings
+  /company:
+    get:
+      tags: [Settings]
+      summary: Get company settings
+      description: Returns company settings (ADMIN, ACCOUNTANT)
+      operationId: getCompanySettings
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Company settings
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/CompanySettings'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [Settings]
+      summary: Update company settings
+      description: Updates company settings (ADMIN only)
+      operationId: updateCompanySettings
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CompanySettingsUpdate'
+      responses:
+        '200':
+          description: Company settings updated
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/CompanySettings'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Company settings not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /company/logo:
+    post:
+      tags: [Settings]
+      summary: Upload company logo
+      description: Upload company logo URL (ADMIN only)
+      operationId: uploadCompanyLogo
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - logoUrl
+              properties:
+                logoUrl:
+                  type: string
+                  format: uri
+                  description: Logo URL
+      responses:
+        '200':
+          description: Logo uploaded successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/CompanySettings'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Activity Logs
+  /activity-logs:
+    get:
+      tags: [Activity Logs]
+      summary: List activity logs
+      description: Returns paginated audit trail
+      operationId: listActivityLogs
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SortParam'
+        - $ref: '#/components/parameters/OrderParam'
+        - $ref: '#/components/parameters/SearchParam'
+        - name: userId
+          in: query
+          description: Filter by user
+          required: false
+          schema:
+            type: string
+        - name: module
+          in: query
+          description: Filter by module
+          required: false
+          schema:
+            type: string
+            enum: [AUTH, PRODUCTS, CUSTOMERS, INVOICES, SETTINGS, REPORTS, USERS]
+        - name: action
+          in: query
+          description: Filter by action
+          required: false
+          schema:
+            type: string
+            enum: [CREATE, READ, UPDATE, DELETE, LOGIN, LOGOUT, EXPORT, PRINT, CANCEL, GENERATE_PDF]
+        - name: entity
+          in: query
+          description: Filter by entity type
+          required: false
+          schema:
+            type: string
+        - name: startDate
+          in: query
+          description: Filter by date range start
+          required: false
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          description: Filter by date range end
+          required: false
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: List of activity logs
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivityLogPaginatedResponse'
+
+  # Authentication
+  /auth/login:
+    post:
+      tags: [Authentication]
+      summary: User login
+      description: Authenticate user with email and password, returns JWT tokens
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/me:
+    get:
+      tags: [Authentication]
+      summary: Get current user profile
+      description: Returns the authenticated user's profile
+      operationId: getProfile
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/UserProfile'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      summary: User logout
+      description: Logout the current user (client should discard tokens)
+      operationId: logout
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: Unauthorized
           content:
             application/json:
               schema:

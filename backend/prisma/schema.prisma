@@ -1,16 +1,21 @@
-// Prisma Schema for BillFlow ERP
-// This defines the database models for the GST Billing & Invoice Management System
+// Prisma Schema for BillFlow ERP v2
+// Production-ready GST Billing & Invoice Management System
+// Designed for Indian manufacturers with SaaS scalability
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
-// User Roles Enum
+// ============================================
+// ENUMS - Type-safe constrained values
+// ============================================
+
 enum UserRole {
   ADMIN
   MANAGER
@@ -19,167 +24,352 @@ enum UserRole {
   VIEWER
 }
 
-// User Model
-model User {
-  id        String   @id @default(uuid())
-  fullName  String
-  email     String   @unique
-  password  String
-  role      UserRole @default(VIEWER)
-  isActive  Boolean  @default(true)
-  lastLogin DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@map("users")
-  @@index([email])
-  @@index([role])
-}
-
-// Product Model
-model Product {
-  id            String        @id @default(uuid())
-  name          String
-  hsnCode       String
-  gstRate       Decimal       @db.Decimal(5, 2)
-  unit          String
-  sellingPrice  Decimal       @db.Decimal(12, 2)
-  stock         Int           @default(0)
-  description   String?
-  isActive      Boolean       @default(true)
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-
-  invoiceItems InvoiceItem[]
-
-  @@map("products")
-  @@index([name])
-  @@index([hsnCode])
-  @@index([isActive])
-}
-
-// Customer Model
-model Customer {
-  id            String    @id @default(uuid())
-  companyName   String
-  gstNumber     String?   @unique
-  contactPerson String?
-  phone         String?
-  email         String?
-  address       String?
-  city          String?
-  state         String?
-  pincode       String?
-  isActive      Boolean   @default(true)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  invoices Invoice[]
-
-  @@map("customers")
-  @@index([companyName])
-  @@index([gstNumber])
-  @@index([isActive])
-}
-
-// Invoice Model
-model Invoice {
-  id              String       @id @default(uuid())
-  invoiceNumber   String       @unique
-  customerId      String
-  invoiceDate     DateTime     @default(now())
-  dueDate         DateTime?
-  subtotal        Decimal      @db.Decimal(12, 2)
-  gstAmount       Decimal      @db.Decimal(12, 2)
-  discount        Decimal      @db.Decimal(12, 2) @default(0)
-  transportCharges Decimal     @db.Decimal(12, 2) @default(0)
-  grandTotal      Decimal      @db.Decimal(12, 2)
-  status          InvoiceStatus @default(DRAFT)
-  notes           String?
-  terms           String?
-  createdAt       DateTime     @default(now())
-  updatedAt       DateTime     @updatedAt
-
-  customer Customer      @relation(fields: [customerId], references: [id], onDelete: Restrict)
-  items    InvoiceItem[]
-
-  @@map("invoices")
-  @@index([invoiceNumber])
-  @@index([customerId])
-  @@index([status])
-  @@index([invoiceDate])
-}
-
-// Invoice Status Enum
 enum InvoiceStatus {
   DRAFT
-  PENDING
-  SENT
-  PAID
-  PARTIAL
-  OVERDUE
+  GENERATED
   CANCELLED
 }
 
-// Invoice Item Model
-model InvoiceItem {
-  id          String   @id @default(uuid())
-  invoiceId   String
-  productId   String
-  quantity    Decimal  @db.Decimal(10, 3)
-  price       Decimal  @db.Decimal(12, 2)
-  gstRate     Decimal  @db.Decimal(5, 2)
-  gstAmount   Decimal  @db.Decimal(12, 2)
-  total       Decimal  @db.Decimal(12, 2)
-  createdAt   DateTime @default(now())
-
-  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Restrict)
-
-  @@map("invoice_items")
-  @@index([invoiceId])
-  @@index([productId])
+enum PaymentStatus {
+  PENDING
+  PARTIAL
+  PAID
 }
 
-// Company Settings Model (Singleton)
+enum CustomerType {
+  BUSINESS
+  INDIVIDUAL
+}
+
+enum ProductUnit {
+  PCS
+  KG
+  GRAM
+  LTR
+  ML
+  BOX
+  BAG
+  ROLL
+  MTR
+  SQFT
+  TON
+}
+
+enum GSTRate {
+  ZERO // 0%
+  FIVE // 5%
+  TWELVE // 12%
+  EIGHTEEN // 18%
+  TWENTY_EIGHT // 28%
+}
+
+enum ActivityModule {
+  AUTH
+  PRODUCTS
+  CUSTOMERS
+  INVOICES
+  SETTINGS
+  REPORTS
+  USERS
+}
+
+enum ActivityAction {
+  CREATE
+  READ
+  UPDATE
+  DELETE
+  LOGIN
+  LOGOUT
+  EXPORT
+  PRINT
+  CANCEL
+  GENERATE_PDF
+}
+
+// ============================================
+// CORE MODELS
+// ============================================
+
+// User Model - Enhanced with audit fields and soft delete
+model User {
+  id        String    @id @default(uuid())
+  fullName  String
+  email     String    @unique
+  password  String
+  role      UserRole  @default(VIEWER)
+  isActive  Boolean   @default(true)
+  lastLogin DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String?
+  updatedBy String?
+  deletedAt DateTime?
+
+  @@index([email])
+  @@index([role])
+  @@index([isActive])
+  @@map("users")
+}
+
+// Category Model - For product organization (future inventory)
+model Category {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+
+  products Product[]
+
+  @@index([name])
+  @@index([isActive])
+  @@map("categories")
+}
+
+// Brand Model - For product organization (future inventory)
+model Brand {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+
+  products Product[]
+
+  @@index([name])
+  @@index([isActive])
+  @@map("brands")
+}
+
+// Product Model - Complete with all business fields
+model Product {
+  id             String      @id @default(uuid())
+  sku            String      @unique
+  barcode        String?     @unique
+  name           String
+  description    String?
+  categoryId     String?
+  brandId        String?
+  hsnCode        String
+  gstRate        GSTRate
+  unit           ProductUnit
+  sellingPrice   Decimal     @db.Decimal(12, 2)
+  openingStock   Decimal     @default(0) @db.Decimal(10, 3)
+  currentStock   Decimal     @default(0) @db.Decimal(10, 3)
+  minStock       Decimal     @default(0) @db.Decimal(10, 3)
+  isActive       Boolean     @default(true)
+  imageUrl       String?
+  searchKeywords String?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  createdBy      String?
+  updatedBy      String?
+  deletedAt      DateTime?
+
+  category     Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  brand        Brand?        @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  invoiceItems InvoiceItem[]
+
+  @@index([sku])
+  @@index([barcode])
+  @@index([name])
+  @@index([hsnCode])
+  @@index([categoryId])
+  @@index([brandId])
+  @@index([isActive])
+  @@map("products")
+}
+
+// Customer Model - Complete B2B support
+model Customer {
+  id             String       @id @default(uuid())
+  customerCode   String       @unique
+  companyName    String
+  contactPerson  String?
+  gstNumber      String?      @unique
+  panNumber      String?
+  phone          String?
+  email          String?
+  address        String?
+  city           String?
+  state          String?
+  stateCode      String? // 2-digit state code for GST
+  country        String       @default("India")
+  postalCode     String?
+  customerType   CustomerType @default(BUSINESS)
+  creditLimit    Decimal      @default(0) @db.Decimal(12, 2)
+  openingBalance Decimal      @default(0) @db.Decimal(12, 2)
+  currentBalance Decimal      @default(0) @db.Decimal(12, 2)
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  createdBy      String?
+  updatedBy      String?
+  deletedAt      DateTime?
+
+  invoices Invoice[]
+
+  @@index([customerCode])
+  @@index([companyName])
+  @@index([gstNumber])
+  @@index([panNumber])
+  @@index([phone])
+  @@index([email])
+  @@index([state])
+  @@index([customerType])
+  @@index([isActive])
+  @@map("customers")
+}
+
+// Company Settings Model - Complete with all business fields
 model CompanySettings {
-  id            String   @id @default("singleton")
-  companyName   String
-  gstNumber     String
-  address       String
-  city          String?
-  state         String?
-  pincode       String?
-  phone         String?
-  email         String?
-  website       String?
-  logo          String?
-  bankName      String?
-  accountNumber String?
-  ifscCode      String?
-  branch        String?
-  footerText    String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                String   @id @default(uuid())
+  companyName       String
+  gstNumber         String
+  panNumber         String?
+  cinNumber         String?
+  phone             String?
+  email             String?
+  website           String?
+  address           String
+  city              String?
+  state             String?
+  stateCode         String?
+  postalCode        String?
+  country           String   @default("India")
+  logoUrl           String? // URL or base64
+  bankName          String?
+  branch            String?
+  accountHolder     String?
+  accountNumber     String?
+  ifscCode          String?
+  upiId             String?
+  digitalSignature  String? // Base64 encoded image
+  invoicePrefix     String   @default("SIH")
+  invoiceSuffix     String?
+  nextInvoiceNumber Int      @default(1)
+  invoiceFooter     String?
+  primaryColor      String   @default("#2563EB")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdBy         String?
+  updatedBy         String?
 
   @@map("company_settings")
 }
 
-// Activity Log Model
-model ActivityLog {
+// Invoice Sequence - Yearly numbering (SIH-2026-000001)
+model InvoiceSequence {
   id        String   @id @default(uuid())
-  userId    String?
-  action    String
-  entity    String?
-  entityId  String?
-  metadata  Json?
-  ipAddress String?
-  userAgent String?
+  year      Int      @unique
+  prefix    String
+  current   Int      @default(0)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  @@map("activity_logs")
+  @@index([year])
+  @@map("invoice_sequences")
+}
+
+// Invoice Model - Full GST compliance
+model Invoice {
+  id               String        @id @default(uuid())
+  invoiceNumber    String        @unique
+  invoiceDate      DateTime      @default(now())
+  dueDate          DateTime?
+  customerId       String
+  subtotal         Decimal       @db.Decimal(12, 2) // Sum of line totals before tax
+  taxableAmount    Decimal       @db.Decimal(12, 2) // After discounts
+  discountAmount   Decimal       @default(0) @db.Decimal(12, 2)
+  transportCharges Decimal       @default(0) @db.Decimal(12, 2)
+  otherCharges     Decimal       @default(0) @db.Decimal(12, 2)
+  cgstAmount       Decimal       @default(0) @db.Decimal(12, 2)
+  sgstAmount       Decimal       @default(0) @db.Decimal(12, 2)
+  igstAmount       Decimal       @default(0) @db.Decimal(12, 2)
+  totalGstAmount   Decimal       @default(0) @db.Decimal(12, 2) // CGST + SGST + IGST
+  roundOff         Decimal       @default(0) @db.Decimal(12, 2)
+  grandTotal       Decimal       @db.Decimal(12, 2)
+  status           InvoiceStatus @default(DRAFT)
+  paymentStatus    PaymentStatus @default(PENDING)
+  notes            String?
+  terms            String?
+  pdfUrl           String?
+  pdfGeneratedAt   DateTime?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+  createdBy        String?
+  updatedBy        String?
+
+  customer Customer      @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  items    InvoiceItem[]
+
+  @@index([invoiceNumber])
+  @@index([customerId])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([invoiceDate])
+  @@index([createdAt])
+  @@map("invoices")
+}
+
+// Invoice Item - Immutable snapshot for audit trail
+model InvoiceItem {
+  id            String      @id @default(uuid())
+  invoiceId     String
+  productId     String? // Nullable for manual line items
+  // Product snapshot fields (immutable)
+  sku           String
+  productName   String
+  hsnCode       String
+  unit          ProductUnit
+  gstRate       GSTRate
+  quantity      Decimal     @db.Decimal(10, 3)
+  unitPrice     Decimal     @db.Decimal(12, 2)
+  discount      Decimal     @default(0) @db.Decimal(12, 2)
+  taxableAmount Decimal     @db.Decimal(12, 2) // quantity * unitPrice - discount
+  cgstAmount    Decimal     @default(0) @db.Decimal(12, 2)
+  sgstAmount    Decimal     @default(0) @db.Decimal(12, 2)
+  igstAmount    Decimal     @default(0) @db.Decimal(12, 2)
+  lineTotal     Decimal     @db.Decimal(12, 2) // taxableAmount + CGST + SGST + IGST
+  createdAt     DateTime    @default(now())
+
+  invoice Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+
+  @@index([invoiceId])
+  @@index([productId])
+  @@index([sku])
+  @@map("invoice_items")
+}
+
+// Activity Log - Comprehensive audit trail
+model ActivityLog {
+  id          String         @id @default(uuid())
+  userId      String?
+  module      ActivityModule
+  action      ActivityAction
+  description String
+  entity      String?
+  entityId    String?
+  oldValue    Json?
+  newValue    Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime       @default(now())
+
   @@index([userId])
+  @@index([module])
   @@index([action])
   @@index([entity])
+  @@index([entityId])
   @@index([createdAt])
+  @@map("activity_logs")
 }

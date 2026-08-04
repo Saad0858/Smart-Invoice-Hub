@@ -1,8 +1,20 @@
 import { Router } from 'express';
 import healthRoutes from '../health.routes';
+import authRoutes from './auth.routes';
+import companySettingsRoutes from './company-settings.routes';
+import categoryRoutes from './category.routes';
+import brandRoutes from './brand.routes';
+import productRoutes from './product.routes';
+import customerRoutes from './customer.routes';
 
 const router = Router();
 
 router.use('/health', healthRoutes);
+router.use('/auth', authRoutes);
+router.use('/company', companySettingsRoutes);
+router.use('/categories', categoryRoutes);
+router.use('/brands', brandRoutes);
+router.use('/products', productRoutes);
+router.use('/customers', customerRoutes);
 
 export default router;

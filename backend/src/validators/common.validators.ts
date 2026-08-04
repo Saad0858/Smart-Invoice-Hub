@@ -19,8 +19,8 @@ export const emailSchema = z.string().email('Invalid email format');
 export const phoneSchema = z
   .string()
   .regex(
-    /^\+?[()]?[0-9]{1,3}[)]?[-\s.]?[()]?[0-9]{1,3}[)]?[-\s.]?[0-9]{4,6}$/,
-    'Invalid phone format'
+    /^(\+91[\-\s]?)?[0]?(?:[1-9]\d{9}|[1-9]\d{2}[\-\s]?\d{8})$/,
+    'Invalid phone format (use Indian mobile/landline format)'
   );
 
 export const dateSchema = z.string().datetime('Invalid date format').optional();

@@ -1,1 +1,7 @@
 export * from './common.validators';
+export * from './auth.validators';
+export * from './company-settings.validators';
+export * from './category.validators';
+export * from './brand.validators';
+export * from './product.validators';
+export * from './customer.validators';

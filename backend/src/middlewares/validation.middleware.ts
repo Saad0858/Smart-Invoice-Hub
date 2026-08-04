@@ -9,11 +9,11 @@ export const validate =
   async (req: Request, _res: Response, next: NextFunction): Promise<void> => {
     try {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      await (schema.parseAsync({
+      await schema.parseAsync({
         body: req.body,
         query: req.query,
         params: req.params,
-      }) as Promise<void>);
+      });
       next();
     } catch (error: unknown) {
       if (error instanceof ZodError) {
