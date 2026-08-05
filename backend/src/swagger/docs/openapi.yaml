@@ -204,10 +204,12 @@ components:
         email:
           type: string
           format: email
+          example: "admin@billflow.com"
         password:
           type: string
           format: password
           minLength: 1
+          example: "admin123"
 
     LoginResponse:
       type: object
@@ -3168,6 +3170,1328 @@ paths:
                     properties:
                       data:
                         $ref: '#/components/schemas/SalesOverviewData'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================
+  # ANALYTICS & REPORTING SCHEMAS
+  # ============================================
+
+  InvoiceHistoryItem:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+      invoiceNumber:
+        type: string
+        example: "SIH-2026-000123"
+      invoiceDate:
+        type: string
+        format: date-time
+      dueDate:
+        type: string
+        format: date-time
+      customerId:
+        type: string
+        format: uuid
+      customer:
+        type: object
+        properties:
+          id:
+            type: string
+            format: uuid
+          customerCode:
+            type: string
+            example: "CUST260001"
+          companyName:
+            type: string
+            example: "Acme Corporation Pvt Ltd"
+          contactPerson:
+            type: string
+          gstNumber:
+            type: string
+          phone:
+            type: string
+          email:
+            type: string
+      subtotal:
+        type: number
+        format: decimal
+      taxableAmount:
+        type: number
+        format: decimal
+      discountAmount:
+        type: number
+        format: decimal
+      transportCharges:
+        type: number
+        format: decimal
+      otherCharges:
+        type: number
+        format: decimal
+      cgstAmount:
+        type: number
+        format: decimal
+      sgstAmount:
+        type: number
+        format: decimal
+      igstAmount:
+        type: number
+        format: decimal
+      totalGstAmount:
+        type: number
+        format: decimal
+      roundOff:
+        type: number
+        format: decimal
+      grandTotal:
+        type: number
+        format: decimal
+      status:
+        type: string
+        enum: [DRAFT, GENERATED, CANCELLED]
+      paymentStatus:
+        type: string
+        enum: [PENDING, PARTIAL, PAID]
+      notes:
+        type: string
+      terms:
+        type: string
+      pdfUrl:
+        type: string
+      pdfGeneratedAt:
+        type: string
+        format: date-time
+      createdAt:
+        type: string
+        format: date-time
+      updatedAt:
+        type: string
+        format: date-time
+      createdBy:
+        type: string
+      updatedBy:
+        type: string
+      items:
+        type: array
+        items:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            productId:
+              type: string
+              format: uuid
+            sku:
+              type: string
+            productName:
+              type: string
+            hsnCode:
+              type: string
+            unit:
+              type: string
+              enum: [PCS, KG, GRAM, LTR, ML, BOX, BAG, ROLL, MTR, SQFT, TON]
+            gstRate:
+              type: string
+              enum: [ZERO, FIVE, TWELVE, EIGHTEEN, TWENTY_EIGHT]
+            quantity:
+              type: number
+              format: decimal
+            unitPrice:
+              type: number
+              format: decimal
+            discount:
+              type: number
+              format: decimal
+            taxableAmount:
+              type: number
+              format: decimal
+            cgstAmount:
+              type: number
+              format: decimal
+            sgstAmount:
+              type: number
+              format: decimal
+            igstAmount:
+              type: number
+              format: decimal
+            lineTotal:
+              type: number
+              format: decimal
+
+  InvoiceHistoryPaginatedResponse:
+    allOf:
+      - $ref: '#/components/schemas/PaginatedResponse'
+      - type: object
+        properties:
+          data:
+            type: array
+            items:
+              $ref: '#/components/schemas/InvoiceHistoryItem'
+
+  # Reports Schemas
+  SalesReportData:
+    type: object
+    properties:
+      period:
+        type: string
+        example: "month"
+      totalSales:
+        type: number
+        format: decimal
+        example: 2500000.00
+      totalInvoices:
+        type: integer
+        example: 120
+      totalGstAmount:
+        type: number
+        format: decimal
+        example: 450000.00
+      averageOrderValue:
+        type: number
+        format: decimal
+        example: 20833.33
+      invoiceStatusBreakdown:
+        type: object
+        properties:
+          DRAFT:
+            type: integer
+            example: 10
+          GENERATED:
+            type: integer
+            example: 100
+          CANCELLED:
+            type: integer
+            example: 10
+      paymentStatusBreakdown:
+        type: object
+        properties:
+          PENDING:
+            type: integer
+            example: 50
+          PARTIAL:
+            type: integer
+            example: 20
+          PAID:
+            type: integer
+            example: 50
+
+  ProductReportData:
+    type: object
+    properties:
+      productId:
+        type: string
+        format: uuid
+      sku:
+        type: string
+        example: "PROD-001"
+      productName:
+        type: string
+        example: "Steel Rods 12mm"
+      categoryName:
+        type: string
+      brandName:
+        type: string
+      hsnCode:
+        type: string
+        example: "7213"
+      gstRate:
+        type: string
+        enum: [ZERO, FIVE, TWELVE, EIGHTEEN, TWENTY_EIGHT]
+        example: "EIGHTEEN"
+      unit:
+        type: string
+        enum: [PCS, KG, GRAM, LTR, ML, BOX, BAG, ROLL, MTR, SQFT, TON]
+        example: "KG"
+      totalQuantitySold:
+        type: number
+        format: decimal
+        example: 5000
+      totalRevenue:
+        type: number
+        format: decimal
+        example: 2500000.00
+      totalGstAmount:
+        type: number
+        format: decimal
+        example: 450000.00
+      averageSellingPrice:
+        type: number
+        format: decimal
+        example: 500.00
+      invoiceCount:
+        type: integer
+        example: 25
+
+  CustomerReportData:
+    type: object
+    properties:
+      customerId:
+        type: string
+        format: uuid
+      customerCode:
+        type: string
+        example: "CUST260001"
+      companyName:
+        type: string
+        example: "Acme Corporation Pvt Ltd"
+      contactPerson:
+        type: string
+      gstNumber:
+        type: string
+      state:
+        type: string
+      customerType:
+        type: string
+        enum: [BUSINESS, INDIVIDUAL]
+      totalInvoices:
+        type: integer
+        example: 15
+      totalPurchases:
+        type: number
+        format: decimal
+        example: 750000.00
+      totalGstPaid:
+        type: number
+        format: decimal
+        example: 135000.00
+      averageOrderValue:
+        type: number
+        format: decimal
+        example: 50000.00
+      outstandingBalance:
+        type: number
+        format: decimal
+        example: 25000.00
+      lastInvoiceDate:
+        type: string
+        format: date-time
+
+  GSTReportData:
+    type: object
+    properties:
+      gstRate:
+        type: string
+        enum: [ZERO, FIVE, TWELVE, EIGHTEEN, TWENTY_EIGHT]
+        example: "EIGHTEEN"
+      taxableAmount:
+        type: number
+        format: decimal
+        example: 2118644.07
+      cgstAmount:
+        type: number
+        format: decimal
+        example: 190678.00
+      sgstAmount:
+        type: number
+        format: decimal
+        example: 190678.00
+      igstAmount:
+        type: number
+        format: decimal
+        example: 0.00
+      totalGstAmount:
+        type: number
+        format: decimal
+        example: 381356.00
+      invoiceCount:
+        type: integer
+        example: 50
+
+  # Business Analytics Schemas
+  TopCustomerData:
+    type: object
+    properties:
+      customerId:
+        type: string
+        format: uuid
+      customerCode:
+        type: string
+        example: "CUST260001"
+      companyName:
+        type: string
+        example: "Acme Corporation Pvt Ltd"
+      totalPurchases:
+        type: number
+        format: decimal
+        example: 750000.00
+      totalInvoices:
+        type: integer
+        example: 15
+      averageOrderValue:
+        type: number
+        format: decimal
+        example: 50000.00
+      outstandingBalance:
+        type: number
+        format: decimal
+        example: 25000.00
+
+  TopProductData:
+    type: object
+    properties:
+      productId:
+        type: string
+        format: uuid
+      sku:
+        type: string
+        example: "PROD-001"
+      productName:
+        type: string
+        example: "Steel Rods 12mm"
+      categoryName:
+        type: string
+      brandName:
+        type: string
+      totalQuantitySold:
+        type: number
+        format: decimal
+        example: 5000
+      totalRevenue:
+        type: number
+        format: decimal
+        example: 2500000.00
+      invoiceCount:
+        type: integer
+        example: 25
+
+  RevenueTrendDataPoint:
+    type: object
+    properties:
+      period:
+        type: string
+        example: "2026-01"
+      revenue:
+        type: number
+        format: decimal
+        example: 2500000.00
+      invoiceCount:
+        type: integer
+        example: 120
+      gstAmount:
+        type: number
+        format: decimal
+        example: 450000.00
+
+  MonthlyComparisonData:
+    type: object
+    properties:
+      month:
+        type: string
+        example: "2026-01"
+      year:
+        type: integer
+        example: 2026
+      revenue:
+        type: number
+        format: decimal
+        example: 2500000.00
+      invoiceCount:
+        type: integer
+        example: 120
+      gstAmount:
+        type: number
+        format: decimal
+        example: 450000.00
+      growthRate:
+        type: number
+        format: decimal
+        example: 15.5
+
+  SlowMovingProductData:
+    type: object
+    properties:
+      productId:
+        type: string
+        format: uuid
+      sku:
+        type: string
+        example: "PROD-001"
+      productName:
+        type: string
+        example: "Steel Rods 12mm"
+      categoryName:
+        type: string
+      brandName:
+        type: string
+      currentStock:
+        type: number
+        format: decimal
+        example: 100
+      minStock:
+        type: number
+        format: decimal
+        example: 50
+      lastSaleDate:
+        type: string
+        format: date-time
+      daysSinceLastSale:
+        type: integer
+        example: 120
+      totalQuantitySold:
+        type: number
+        format: decimal
+        example: 5000
+
+  LowStockData:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+      sku:
+        type: string
+        example: "PROD-001"
+      name:
+        type: string
+        example: "Steel Rods 12mm"
+      currentStock:
+        type: number
+        format: decimal
+        example: 10
+      minStock:
+        type: number
+        format: decimal
+        example: 50
+      unit:
+        type: string
+        enum: [PCS, KG, GRAM, LTR, ML, BOX, BAG, ROLL, MTR, SQFT, TON]
+        example: "KG"
+      categoryName:
+        type: string
+        example: "Raw Materials"
+      brandName:
+        type: string
+        example: "SteelCo"
+
+  # Global Search Schemas
+  SearchResultItem:
+    type: object
+    properties:
+      id:
+        type: string
+        format: uuid
+      type:
+        type: string
+        enum: [product, customer, invoice, category, brand]
+      title:
+        type: string
+      subtitle:
+        type: string
+      metadata:
+        type: object
+
+  SearchResults:
+    type: object
+    properties:
+      products:
+        type: array
+        items:
+          $ref: '#/components/schemas/SearchResultItem'
+      customers:
+        type: array
+        items:
+          $ref: '#/components/schemas/SearchResultItem'
+      invoices:
+        type: array
+        items:
+          $ref: '#/components/schemas/SearchResultItem'
+      categories:
+        type: array
+        items:
+          $ref: '#/components/schemas/SearchResultItem'
+      brands:
+        type: array
+        items:
+          $ref: '#/components/schemas/SearchResultItem'
+
+  # ============================================
+  # ANALYTICS PARAMETERS
+  # ============================================
+
+  PeriodParam:
+    name: period
+    in: query
+    description: Time period for report
+    required: false
+    schema:
+      type: string
+      enum: [daily, weekly, monthly, yearly, custom]
+      default: monthly
+
+  StartDateParam:
+    name: startDate
+    in: query
+    description: Start date for custom period (YYYY-MM-DD)
+    required: false
+    schema:
+      type: string
+      format: date
+
+  EndDateParam:
+    name: endDate
+    in: query
+    description: End date for custom period (YYYY-MM-DD)
+    required: false
+    schema:
+      type: string
+      format: date
+
+  IntervalParam:
+    name: interval
+    in: query
+    description: Grouping interval
+    required: false
+    schema:
+      type: string
+      enum: [daily, weekly, monthly]
+      default: monthly
+
+  DaysThresholdParam:
+    name: daysThreshold
+    in: query
+    description: Days threshold for slow moving products
+    required: false
+    schema:
+      type: integer
+      minimum: 1
+      default: 90
+
+  MonthsParam:
+    name: months
+    in: query
+    description: Number of months for comparison
+    required: false
+    schema:
+      type: integer
+      minimum: 1
+      maximum: 60
+      default: 12
+
+  SearchQueryParam:
+    name: q
+    in: query
+    description: Search query (minimum 2 characters)
+    required: true
+    schema:
+      type: string
+      minLength: 2
+
+  SearchLimitParam:
+    name: limit
+    in: query
+    description: Maximum results per category
+    required: false
+    schema:
+      type: integer
+      minimum: 1
+      maximum: 50
+      default: 10
+
+  # ============================================
+  # ANALYTICS PATHS
+  # ============================================
+
+  # Invoice History
+  /analytics/invoices/history:
+    get:
+      tags: [Reports]
+      summary: List invoices with comprehensive filtering
+      description: Returns paginated list of invoices with filters for invoice number, customer, date range, status, payment status, and created by
+      operationId: getInvoiceHistory
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/LimitParam'
+        - $ref: '#/components/parameters/SortParam'
+        - $ref: '#/components/parameters/OrderParam'
+        - $ref: '#/components/parameters/SearchParam'
+        - name: customerId
+          in: query
+          description: Filter by customer ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          description: Filter by invoice status
+          required: false
+          schema:
+            type: string
+            enum: [DRAFT, GENERATED, CANCELLED]
+        - name: paymentStatus
+          in: query
+          description: Filter by payment status
+          required: false
+          schema:
+            type: string
+            enum: [PENDING, PARTIAL, PAID]
+        - name: createdBy
+          in: query
+          description: Filter by creator user ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Invoice history retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/InvoiceHistoryPaginatedResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /analytics/invoices/history/{id}:
+    get:
+      tags: [Reports]
+      summary: Get invoice by ID with full details
+      description: Returns a single invoice with all items and customer details
+      operationId: getInvoiceById
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Invoice found
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/InvoiceHistoryItem'
+        '404':
+          description: Invoice not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /analytics/invoices/search:
+    get:
+      tags: [Reports]
+      summary: Quick search for invoices
+      description: Returns invoices matching the search query (invoice number, customer name, or customer code)
+      operationId: searchInvoices
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/SearchQueryParam'
+        - $ref: '#/components/parameters/SearchLimitParam'
+      responses:
+        '200':
+          description: Search results retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/InvoiceHistoryItem'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /analytics/invoices/export:
+    get:
+      tags: [Reports]
+      summary: Export invoices to CSV
+      description: Returns invoice data formatted for CSV export with all fields
+      operationId: exportInvoices
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/SearchParam'
+        - name: customerId
+          in: query
+          description: Filter by customer ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          description: Filter by invoice status
+          required: false
+          schema:
+            type: string
+            enum: [DRAFT, GENERATED, CANCELLED]
+        - name: paymentStatus
+          in: query
+          description: Filter by payment status
+          required: false
+          schema:
+            type: string
+            enum: [PENDING, PARTIAL, PAID]
+        - name: createdBy
+          in: query
+          description: Filter by creator user ID
+          required: false
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Export data retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          type: object
+
+  # Reports
+  /analytics/reports/sales:
+    get:
+      tags: [Reports]
+      summary: Get sales report
+      description: Returns comprehensive sales report for a specific period with invoice and payment status breakdowns
+      operationId: getSalesReport
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PeriodParam'
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Sales report retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/SalesReportData'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /analytics/reports/products:
+    get:
+      tags: [Reports]
+      summary: Get product report
+      description: Returns product-wise sales performance report with quantities, revenue, and GST breakdown
+      operationId: getProductReport
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PeriodParam'
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Product report retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ProductReportData'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /analytics/reports/customers:
+    get:
+      tags: [Reports]
+      summary: Get customer report
+      description: Returns customer-wise purchase analysis with total purchases, GST paid, and outstanding balance
+      operationId: getCustomerReport
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PeriodParam'
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Customer report retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/CustomerReportData'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /analytics/reports/gst:
+    get:
+      tags: [Reports]
+      summary: Get GST report
+      description: Returns GST breakdown by rate with taxable amounts and tax components (CGST, SGST, IGST)
+      operationId: getGSTReport
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PeriodParam'
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: GST report retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/GSTReportData'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Business Analytics
+  /analytics/top-customers:
+    get:
+      tags: [Reports]
+      summary: Get top customers by revenue
+      description: Returns top customers ranked by total purchase amount
+      operationId: getTopCustomers
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Number of customers to return (max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Top customers retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/TopCustomerData'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /analytics/top-products:
+    get:
+      tags: [Reports]
+      summary: Get top products by quantity sold
+      description: Returns top products ranked by total quantity sold
+      operationId: getTopProducts
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          description: Number of products to return (max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Top products retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/TopProductData'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /analytics/revenue-trend:
+    get:
+      tags: [Reports]
+      summary: Get revenue trend for charts
+      description: Returns chart-ready revenue trend data grouped by interval (daily, weekly, monthly)
+      operationId: getRevenueTrend
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IntervalParam'
+        - $ref: '#/components/parameters/StartDateParam'
+        - $ref: '#/components/parameters/EndDateParam'
+      responses:
+        '200':
+          description: Revenue trend data retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/RevenueTrendDataPoint'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /analytics/low-stock:
+    get:
+      tags: [Reports]
+      summary: Get low stock products
+      description: Returns products where current stock is less than or equal to minimum stock threshold
+      operationId: getLowStockProducts
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Low stock products retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/LowStockData'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /analytics/slow-moving:
+    get:
+      tags: [Reports]
+      summary: Get slow moving products
+      description: Returns products with no sales in the specified number of days
+      operationId: getSlowMovingProducts
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/DaysThresholdParam'
+        - name: limit
+          in: query
+          description: Number of products to return (max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Slow moving products retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/SlowMovingProductData'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /analytics/monthly-comparison:
+    get:
+      tags: [Reports]
+      summary: Get monthly comparison
+      description: Returns month-over-month revenue comparison with growth rates
+      operationId: getMonthlyComparison
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/MonthsParam'
+      responses:
+        '200':
+          description: Monthly comparison retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/MonthlyComparisonData'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden - Insufficient permissions
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # Global Search
+  /analytics/search:
+    get:
+      tags: [Reports]
+      summary: Global search across all entities
+      description: Search across products, customers, invoices, categories, and brands. Returns grouped results.
+      operationId: globalSearch
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/SearchQueryParam'
+        - $ref: '#/components/parameters/SearchLimitParam'
+      responses:
+        '200':
+          description: Search results retrieved successfully
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/SearchResults'
         '400':
           description: Validation error
           content:
