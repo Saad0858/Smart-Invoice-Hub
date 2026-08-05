@@ -46,10 +46,11 @@ info:
     url: https://opensource.org/licenses/MIT
 
 servers:
+  - url: https://smart-invoice-hub.onrender.com/api/v1
+    description: Render Production
+
   - url: http://localhost:3000/api/v1
-    description: Development server
-  - url: https://api.billflow.com/api/v1
-    description: Production server
+    description: Local Development
 
 components:
   securitySchemes:
