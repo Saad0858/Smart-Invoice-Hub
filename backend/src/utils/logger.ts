@@ -4,7 +4,8 @@ import { env } from '@config/env';
 const logFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.errors({ stack: true }),
-  winston.format.printf(({ timestamp, level, message, ...meta }) => {
+  winston.format.printf((info: winston.Logform.TransformableInfo) => {
+    const { timestamp, level, message, ...meta } = info;
     const msg = String(message);
     const lvl = String(level);
     const ts = String(timestamp);
@@ -19,7 +20,8 @@ const logFormat = winston.format.combine(
 const consoleFormat = winston.format.combine(
   winston.format.colorize(),
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-  winston.format.printf(({ timestamp, level, message, ...meta }) => {
+  winston.format.printf((info: winston.Logform.TransformableInfo) => {
+    const { timestamp, level, message, ...meta } = info;
     const msg = String(message);
     const lvl = String(level);
     const ts = String(timestamp);

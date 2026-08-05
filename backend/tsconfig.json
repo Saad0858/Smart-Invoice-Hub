@@ -3,7 +3,7 @@
     "target": "ES2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "lib": ["ES2022"],
+    "lib": ["ES2022", "dom"],
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
@@ -31,7 +31,6 @@
       "@utils/*": ["./src/utils/*"],
       "@prisma/*": ["./prisma/*"]
     },
-    "typeRoots": ["./src/types", "./node_modules/@types"],
     "allowSyntheticDefaultImports": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,

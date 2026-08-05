@@ -5,7 +5,6 @@ import { env } from '@config/env';
 import type { Application } from 'express';
 
 // Load swagger document synchronously
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
 const swaggerDocument = YAML.load(path.join(__dirname, 'docs', 'openapi.yaml')) as Record<string, unknown>;
 
 export const swaggerOptions = {
