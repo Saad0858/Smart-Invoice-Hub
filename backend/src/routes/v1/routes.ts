@@ -9,6 +9,7 @@ import customerRoutes from './customer.routes';
 import invoiceRoutes from './invoice.routes';
 import storageRoutes from './storage.routes';
 import dashboardRoutes from './dashboard.routes';
+import analyticsRoutes from './analytics.routes';
 
 const router = Router();
 
@@ -22,5 +23,6 @@ router.use('/customers', customerRoutes);
 router.use('/invoices', invoiceRoutes);
 router.use('/storage', storageRoutes);
 router.use('/dashboard', dashboardRoutes);
+router.use('/analytics', analyticsRoutes);
 
 export default router;
