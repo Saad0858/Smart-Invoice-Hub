@@ -14,8 +14,8 @@
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
-    "baseUrl": ".",
     "paths": {
+      "*": ["./*"],
       "@/*": ["./src/*"],
       "@config/*": ["./src/config/*"],
       "@controllers/*": ["./src/controllers/*"],
