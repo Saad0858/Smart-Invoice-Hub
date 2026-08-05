@@ -50,11 +50,11 @@ export const createApp = (): Application => {
     });
   });
 
+  // Swagger Documentation (before API prefix so it's at /api-docs not /api/v1/api-docs)
+  setupSwagger(app);
+
   // API Routes
   app.use(env.API_PREFIX, routes);
-
-  // Swagger Documentation
-  setupSwagger(app);
 
   // 404 Handler
   app.use(notFoundHandler);

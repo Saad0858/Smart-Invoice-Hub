@@ -26,14 +26,18 @@ export const swaggerOptions = {
 };
 
 export const setupSwagger = (app: Application): void => {
-  if (env.NODE_ENV !== 'production') {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+  // Enable swagger in all environments, or configure via SWAGGER_ENABLED env var
+  const swaggerEnabled = process.env.SWAGGER_ENABLED !== 'false';
+
+  if (swaggerEnabled) {
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, swaggerOptions));
 
     // Redirect root to docs in development
-    app.get('/', (_req, res) => {
-      res.redirect('/api-docs');
-    });
+    if (env.NODE_ENV === 'development') {
+      app.get('/', (_req, res) => {
+        res.redirect('/api-docs');
+      });
+    }
   }
 };
 
