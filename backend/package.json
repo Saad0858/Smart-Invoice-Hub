@@ -55,6 +55,8 @@
     "morgan": "1.10.0",
     "multer": "2.2.0",
     "swagger-ui-express": "5.0.1",
+    "tsc-alias": "1.9.1",
+    "tsx": "4.16.5",
     "uuid": "10.0.0",
     "winston": "3.14.2",
     "yamljs": "0.3.0",
@@ -74,8 +76,6 @@
     "prettier": "3.3.3",
     "prisma": "5.22.0",
     "supertest": "7.0.0",
-    "tsc-alias": "1.9.1",
-    "tsx": "4.16.5",
     "typescript": "5.9.2"
   },
   "engines": {
