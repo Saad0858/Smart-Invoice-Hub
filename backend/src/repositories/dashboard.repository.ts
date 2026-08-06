@@ -1,5 +1,5 @@
 import { prisma } from '@config/database';
-import type { Prisma, GSTRate, InvoiceStatus } from '@prisma/client';
+import type { Prisma, GSTRate, InvoiceStatus, PaymentMethod } from '@prisma/client';
 
 export interface DateRange {
   startDate?: Date;
@@ -23,6 +23,14 @@ export interface DashboardSummary {
   totalProducts: number;
   lowStockCount: number;
   gstCollected: number;
+  // AR Metrics
+  todayCollection: number;
+  outstandingAmount: number;
+  overdueAmount: number;
+  collectionThisMonth: number;
+  collectionThisYear: number;
+  paymentMethodDistribution: Record<PaymentMethod, { count: number; amount: number }>;
+  averageCollectionTime: number;
 }
 
 export interface SalesOverviewData {
@@ -37,9 +45,11 @@ export interface SalesOverviewData {
     cancelled: number;
   };
   paymentStatusBreakdown: {
-    pending: number;
-    partial: number;
+    unpaid: number;
+    partiallyPaid: number;
     paid: number;
+    overdue: number;
+    cancelled: number;
   };
 }
 
@@ -110,6 +120,8 @@ export class DashboardRepositoryImpl implements DashboardRepository {
     const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+    const startOfYear = new Date(now.getFullYear(), 0, 1);
+    const endOfYear = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
 
     const [
       todayStats,
@@ -118,6 +130,14 @@ export class DashboardRepositoryImpl implements DashboardRepository {
       totalProducts,
       lowStockCount,
       gstCollectedAgg,
+      // AR Metrics
+      todayCollectionAgg,
+      outstandingAgg,
+      overdueAgg,
+      monthCollectionAgg,
+      yearCollectionAgg,
+      paymentMethodStats,
+      avgCollectionDaysAgg,
     ] = await Promise.all([
       // Today's sales and invoices
       prisma.invoice.aggregate({
@@ -160,7 +180,82 @@ export class DashboardRepositoryImpl implements DashboardRepository {
         },
         _sum: { totalGstAmount: true },
       }),
+      // Today's collection
+      prisma.payment.aggregate({
+        where: {
+          isCancelled: false,
+          paymentDate: { gte: startOfToday, lte: endOfToday },
+        },
+        _sum: { amount: true },
+      }),
+      // Outstanding amount
+      prisma.invoice.aggregate({
+        where: {
+          status: { not: 'CANCELLED' },
+          balanceAmount: { gt: 0 },
+        },
+        _sum: { balanceAmount: true },
+      }),
+      // Overdue amount
+      prisma.invoice.aggregate({
+        where: {
+          status: { not: 'CANCELLED' },
+          balanceAmount: { gt: 0 },
+          dueDate: { lt: now },
+        },
+        _sum: { balanceAmount: true },
+      }),
+      // This month collection
+      prisma.payment.aggregate({
+        where: {
+          isCancelled: false,
+          paymentDate: { gte: startOfMonth, lte: endOfMonth },
+        },
+        _sum: { amount: true },
+      }),
+      // This year collection
+      prisma.payment.aggregate({
+        where: {
+          isCancelled: false,
+          paymentDate: { gte: startOfYear, lte: endOfYear },
+        },
+        _sum: { amount: true },
+      }),
+      // Payment method distribution
+      prisma.payment.groupBy({
+        by: ['paymentMethod'],
+        where: { isCancelled: false },
+        _sum: { amount: true },
+        _count: true,
+      }),
+      // Average collection days
+      prisma.$queryRawUnsafe<any[]>(`
+        SELECT AVG(EXTRACT(DAY FROM (p."paymentDate" - i."invoiceDate"))) as avg_days
+        FROM "invoices" i
+        JOIN "payments" p ON p."invoiceId" = i.id
+        WHERE i."status" != 'CANCELLED'
+          AND i."paymentStatus" = 'PAID'
+          AND p."isCancelled" = false
+      `),
     ]);
+
+    const paymentMethodDistribution: Record<PaymentMethod, { count: number; amount: number }> = {
+      CASH: { count: 0, amount: 0 },
+      UPI: { count: 0, amount: 0 },
+      BANK_TRANSFER: { count: 0, amount: 0 },
+      CHEQUE: { count: 0, amount: 0 },
+      CARD: { count: 0, amount: 0 },
+      OTHER: { count: 0, amount: 0 },
+    };
+
+    for (const item of paymentMethodStats) {
+      if (item.paymentMethod in paymentMethodDistribution) {
+        paymentMethodDistribution[item.paymentMethod as PaymentMethod] = {
+          count: item._count,
+          amount: Number(item._sum.amount ?? 0),
+        };
+      }
+    }
 
     return {
       todaySales: Number(todayStats._sum.grandTotal ?? 0),
@@ -171,6 +266,14 @@ export class DashboardRepositoryImpl implements DashboardRepository {
       totalProducts,
       lowStockCount,
       gstCollected: Number(gstCollectedAgg._sum.totalGstAmount ?? 0),
+      // AR Metrics
+      todayCollection: Number(todayCollectionAgg._sum.amount ?? 0),
+      outstandingAmount: Number(outstandingAgg._sum.balanceAmount ?? 0),
+      overdueAmount: Number(overdueAgg._sum.balanceAmount ?? 0),
+      collectionThisMonth: Number(monthCollectionAgg._sum.amount ?? 0),
+      collectionThisYear: Number(yearCollectionAgg._sum.amount ?? 0),
+      paymentMethodDistribution,
+      averageCollectionTime: avgCollectionDaysAgg[0]?.avg_days ? Number(avgCollectionDaysAgg[0].avg_days) : 0,
     };
   }
 
@@ -274,14 +377,18 @@ export class DashboardRepositoryImpl implements DashboardRepository {
 
     // Build payment status breakdown
     const paymentStatusBreakdown = {
-      pending: 0,
-      partial: 0,
+      unpaid: 0,
+      partiallyPaid: 0,
       paid: 0,
+      overdue: 0,
+      cancelled: 0,
     };
     for (const item of paymentStatusCounts) {
-      if (item.paymentStatus === 'PENDING') paymentStatusBreakdown.pending = item._count;
-      else if (item.paymentStatus === 'PARTIAL') paymentStatusBreakdown.partial = item._count;
+      if (item.paymentStatus === 'UNPAID') paymentStatusBreakdown.unpaid = item._count;
+      else if (item.paymentStatus === 'PARTIALLY_PAID') paymentStatusBreakdown.partiallyPaid = item._count;
       else if (item.paymentStatus === 'PAID') paymentStatusBreakdown.paid = item._count;
+      else if (item.paymentStatus === 'OVERDUE') paymentStatusBreakdown.overdue = item._count;
+      else if (item.paymentStatus === 'CANCELLED') paymentStatusBreakdown.cancelled = item._count;
     }
 
     return {

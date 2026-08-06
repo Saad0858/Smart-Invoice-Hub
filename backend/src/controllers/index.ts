@@ -6,5 +6,8 @@ export * from './brand.controller';
 export * from './product.controller';
 export * from './customer.controller';
 export * from './invoice.controller';
+export * from './payment.controller';
+export * from './ledger.controller';
+export * from './outstanding.controller';
 export * from './dashboard.controller';
 export * from './analytics.controller';
