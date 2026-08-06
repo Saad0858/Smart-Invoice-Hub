@@ -650,6 +650,267 @@ export class AnalyticsController {
       }
     }
   }
+
+  // ============================================
+  // AR ANALYTICS
+  // ============================================
+
+  /**
+   * GET /analytics/ar/collection-trend
+   * Collection trend over time
+   */
+  async getCollectionTrend(req: Request, res: Response): Promise<void> {
+    try {
+      const { interval, startDate, endDate } = req.query as {
+        interval?: 'daily' | 'weekly' | 'monthly';
+        startDate?: string;
+        endDate?: string;
+      };
+
+      const params = {
+        interval: interval || 'monthly',
+        startDate: startDate ? new Date(startDate) : undefined,
+        endDate: endDate ? new Date(endDate) : undefined,
+      };
+
+      if (params.startDate && isNaN(params.startDate.getTime())) {
+        sendError(res, 'Invalid startDate format. Use YYYY-MM-DD', HTTP_STATUS.BAD_REQUEST, [], req.requestId);
+        return;
+      }
+      if (params.endDate && isNaN(params.endDate.getTime())) {
+        sendError(res, 'Invalid endDate format. Use YYYY-MM-DD', HTTP_STATUS.BAD_REQUEST, [], req.requestId);
+        return;
+      }
+      if (!['daily', 'weekly', 'monthly'].includes(params.interval)) {
+        sendError(res, 'Invalid interval. Must be daily, weekly, or monthly', HTTP_STATUS.BAD_REQUEST, [], req.requestId);
+        return;
+      }
+
+      const trend = await analyticsService.getCollectionTrend(params.interval, params.startDate, params.endDate);
+      sendSuccess(res, trend, MESSAGES.SUCCESS, HTTP_STATUS.OK, req.requestId);
+    } catch (error) {
+      logger.error('Failed to fetch collection trend', { error: error instanceof Error ? error.message : 'Unknown error' });
+      if (error instanceof ApiError) {
+        sendError(res, error.message, error.statusCode, error.errors as any[], req.requestId);
+      } else {
+        sendError(res, 'Failed to fetch collection trend', HTTP_STATUS.INTERNAL_SERVER_ERROR, [], req.requestId);
+      }
+    }
+  }
+
+  /**
+   * GET /analytics/ar/monthly-collection
+   * Monthly collection summary
+   */
+  async getMonthlyCollection(req: Request, res: Response): Promise<void> {
+    try {
+      const { startDate, endDate } = req.query as { startDate?: string; endDate?: string };
+
+      const params = {
+        startDate: startDate ? new Date(startDate) : undefined,
+        endDate: endDate ? new Date(endDate) : undefined,
+      };
+
+      if (params.startDate && isNaN(params.startDate.getTime())) {
+        sendError(res, 'Invalid startDate format. Use YYYY-MM-DD', HTTP_STATUS.BAD_REQUEST, [], req.requestId);
+        return;
+      }
+      if (params.endDate && isNaN(params.endDate.getTime())) {
+        sendError(res, 'Invalid endDate format. Use YYYY-MM-DD', HTTP_STATUS.BAD_REQUEST, [], req.requestId);
+        return;
+      }
+
+      const collection = await analyticsService.getMonthlyCollection(params.startDate, params.endDate);
+      sendSuccess(res, collection, MESSAGES.SUCCESS, HTTP_STATUS.OK, req.requestId);
+    } catch (error) {
+      logger.error('Failed to fetch monthly collection', { error: error instanceof Error ? error.message : 'Unknown error' });
+      if (error instanceof ApiError) {
+        sendError(res, error.message, error.statusCode, error.errors as any[], req.requestId);
+      } else {
+        sendError(res, 'Failed to fetch monthly collection', HTTP_STATUS.INTERNAL_SERVER_ERROR, [], req.requestId);
+      }
+    }
+  }
+
+  /**
+   * GET /analytics/ar/daily-collection
+   * Daily collection summary
+   */
+  async getDailyCollection(req: Request, res: Response): Promise<void> {
+    try {
+      const { startDate, endDate } = req.query as { startDate?: string; endDate?: string };
+
+      const params = {
+        startDate: startDate ? new Date(startDate) : undefined,
+        endDate: endDate ? new Date(endDate) : undefined,
+      };
+
+      if (params.startDate && isNaN(params.startDate.getTime())) {
+        sendError(res, 'Invalid startDate format. Use YYYY-MM-DD', HTTP_STATUS.BAD_REQUEST, [], req.requestId);
+        return;
+      }
+      if (params.endDate && isNaN(params.endDate.getTime())) {
+        sendError(res, 'Invalid endDate format. Use YYYY-MM-DD', HTTP_STATUS.BAD_REQUEST, [], req.requestId);
+        return;
+      }
+
+      const collection = await analyticsService.getDailyCollection(params.startDate, params.endDate);
+      sendSuccess(res, collection, MESSAGES.SUCCESS, HTTP_STATUS.OK, req.requestId);
+    } catch (error) {
+      logger.error('Failed to fetch daily collection', { error: error instanceof Error ? error.message : 'Unknown error' });
+      if (error instanceof ApiError) {
+        sendError(res, error.message, error.statusCode, error.errors as any[], req.requestId);
+      } else {
+        sendError(res, 'Failed to fetch daily collection', HTTP_STATUS.INTERNAL_SERVER_ERROR, [], req.requestId);
+      }
+    }
+  }
+
+  /**
+   * GET /analytics/ar/top-paying-customers
+   * Top paying customers
+   */
+  async getTopPayingCustomers(req: Request, res: Response): Promise<void> {
+    try {
+      const { limit, startDate, endDate } = req.query as {
+        limit?: string;
+        startDate?: string;
+        endDate?: string;
+      };
+
+      const limitNum = limit ? parseInt(limit, 10) : 10;
+      if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
+        sendError(res, 'Invalid limit. Must be between 1 and 100', HTTP_STATUS.BAD_REQUEST, [], req.requestId);
+        return;
+      }
+
+      const dateRange: { startDate?: Date; endDate?: Date } = {};
+      if (startDate) {
+        const parsed = new Date(startDate);
+        if (isNaN(parsed.getTime())) {
+          sendError(res, 'Invalid startDate format. Use YYYY-MM-DD', HTTP_STATUS.BAD_REQUEST, [], req.requestId);
+          return;
+        }
+        dateRange.startDate = parsed;
+      }
+      if (endDate) {
+        const parsed = new Date(endDate);
+        if (isNaN(parsed.getTime())) {
+          sendError(res, 'Invalid endDate format. Use YYYY-MM-DD', HTTP_STATUS.BAD_REQUEST, [], req.requestId);
+          return;
+        }
+        dateRange.endDate = parsed;
+      }
+      if (dateRange.startDate && dateRange.endDate && dateRange.startDate > dateRange.endDate) {
+        sendError(res, 'startDate must be before endDate', HTTP_STATUS.BAD_REQUEST, [], req.requestId);
+        return;
+      }
+
+      const customers = await analyticsService.getTopPayingCustomers(limitNum, dateRange.startDate, dateRange.endDate);
+      sendSuccess(res, customers, MESSAGES.SUCCESS, HTTP_STATUS.OK, req.requestId);
+    } catch (error) {
+      logger.error('Failed to fetch top paying customers', { error: error instanceof Error ? error.message : 'Unknown error' });
+      if (error instanceof ApiError) {
+        sendError(res, error.message, error.statusCode, error.errors as any[], req.requestId);
+      } else {
+        sendError(res, 'Failed to fetch top paying customers', HTTP_STATUS.INTERNAL_SERVER_ERROR, [], req.requestId);
+      }
+    }
+  }
+
+  /**
+   * GET /analytics/ar/outstanding-aging
+   * Outstanding aging report
+   */
+  async getOutstandingAging(req: Request, res: Response): Promise<void> {
+    try {
+      const { startDate, endDate } = req.query as { startDate?: string; endDate?: string };
+
+      const params = {
+        startDate: startDate ? new Date(startDate) : undefined,
+        endDate: endDate ? new Date(endDate) : undefined,
+      };
+
+      if (params.startDate && isNaN(params.startDate.getTime())) {
+        sendError(res, 'Invalid startDate format. Use YYYY-MM-DD', HTTP_STATUS.BAD_REQUEST, [], req.requestId);
+        return;
+      }
+      if (params.endDate && isNaN(params.endDate.getTime())) {
+        sendError(res, 'Invalid endDate format. Use YYYY-MM-DD', HTTP_STATUS.BAD_REQUEST, [], req.requestId);
+        return;
+      }
+
+      const aging = await analyticsService.getOutstandingAging(params.startDate, params.endDate);
+      sendSuccess(res, aging, MESSAGES.SUCCESS, HTTP_STATUS.OK, req.requestId);
+    } catch (error) {
+      logger.error('Failed to fetch outstanding aging', { error: error instanceof Error ? error.message : 'Unknown error' });
+      if (error instanceof ApiError) {
+        sendError(res, error.message, error.statusCode, error.errors as any[], req.requestId);
+      } else {
+        sendError(res, 'Failed to fetch outstanding aging', HTTP_STATUS.INTERNAL_SERVER_ERROR, [], req.requestId);
+      }
+    }
+  }
+
+  /**
+   * GET /analytics/ar/payment-method-analytics
+   * Payment method distribution analytics
+   */
+  async getPaymentMethodAnalytics(req: Request, res: Response): Promise<void> {
+    try {
+      const { startDate, endDate } = req.query as { startDate?: string; endDate?: string };
+
+      const params = {
+        startDate: startDate ? new Date(startDate) : undefined,
+        endDate: endDate ? new Date(endDate) : undefined,
+      };
+
+      if (params.startDate && isNaN(params.startDate.getTime())) {
+        sendError(res, 'Invalid startDate format. Use YYYY-MM-DD', HTTP_STATUS.BAD_REQUEST, [], req.requestId);
+        return;
+      }
+      if (params.endDate && isNaN(params.endDate.getTime())) {
+        sendError(res, 'Invalid endDate format. Use YYYY-MM-DD', HTTP_STATUS.BAD_REQUEST, [], req.requestId);
+        return;
+      }
+
+      const analytics = await analyticsService.getPaymentMethodAnalytics(params.startDate, params.endDate);
+      sendSuccess(res, analytics, MESSAGES.SUCCESS, HTTP_STATUS.OK, req.requestId);
+    } catch (error) {
+      logger.error('Failed to fetch payment method analytics', { error: error instanceof Error ? error.message : 'Unknown error' });
+      if (error instanceof ApiError) {
+        sendError(res, error.message, error.statusCode, error.errors as any[], req.requestId);
+      } else {
+        sendError(res, 'Failed to fetch payment method analytics', HTTP_STATUS.INTERNAL_SERVER_ERROR, [], req.requestId);
+      }
+    }
+  }
+
+  /**
+   * GET /analytics/ar/collection-forecast
+   * Collection forecast
+   */
+  async getCollectionForecast(req: Request, res: Response): Promise<void> {
+    try {
+      const { months } = req.query as { months?: string };
+
+      const monthsNum = months ? parseInt(months, 10) : 6;
+      if (isNaN(monthsNum) || monthsNum < 1 || monthsNum > 24) {
+        sendError(res, 'Invalid months. Must be between 1 and 24', HTTP_STATUS.BAD_REQUEST, [], req.requestId);
+        return;
+      }
+
+      const forecast = await analyticsService.getCollectionForecast(monthsNum);
+      sendSuccess(res, forecast, MESSAGES.SUCCESS, HTTP_STATUS.OK, req.requestId);
+    } catch (error) {
+      logger.error('Failed to fetch collection forecast', { error: error instanceof Error ? error.message : 'Unknown error' });
+      if (error instanceof ApiError) {
+        sendError(res, error.message, error.statusCode, error.errors as any[], req.requestId);
+      } else {
+        sendError(res, 'Failed to fetch collection forecast', HTTP_STATUS.INTERNAL_SERVER_ERROR, [], req.requestId);
+      }
+    }
+  }
 }
 
 export const analyticsController = new AnalyticsController();

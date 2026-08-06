@@ -199,3 +199,39 @@
 * ipAddress
 * userAgent
 * createdAt
+
+### Payments (Phase 10 - Accounts Receivable)
+
+* id
+* paymentNumber (Auto-generated, unique)
+* invoiceId (FK to Invoices)
+* customerId (FK to Customers)
+* paymentDate
+* amount
+* paymentMethod (CASH, UPI, BANK_TRANSFER, CHEQUE, CARD, OTHER)
+* referenceNumber (Optional, required for UPI/BANK_TRANSFER/CHEQUE)
+* remarks
+* receivedBy
+* isCancelled (Default: false)
+* cancelledReason
+* createdAt
+* updatedAt
+* createdBy
+* updatedBy
+
+### Enums (Phase 10)
+
+#### PaymentMethod
+* CASH
+* UPI
+* BANK_TRANSFER
+* CHEQUE
+* CARD
+* OTHER
+
+#### PaymentStatus (Updated)
+* UNPAID
+* PARTIALLY_PAID
+* PAID
+* OVERDUE
+* CANCELLED

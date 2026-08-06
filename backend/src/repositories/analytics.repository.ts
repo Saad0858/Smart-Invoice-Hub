@@ -206,6 +206,62 @@ export interface SearchResults {
   brands: SearchResultItem[];
 }
 
+// AR Analytics
+export interface CollectionTrendDataPoint {
+  period: string;
+  amount: number;
+  count: number;
+}
+
+export interface MonthlyCollectionDataPoint {
+  month: string;
+  year: number;
+  amount: number;
+  count: number;
+}
+
+export interface DailyCollectionDataPoint {
+  date: string;
+  amount: number;
+  count: number;
+}
+
+export interface TopPayingCustomerData {
+  customerId: string;
+  customerCode: string;
+  companyName: string;
+  totalPaid: number;
+  paymentCount: number;
+  averagePayment: number;
+}
+
+export interface OutstandingAgingDataPoint {
+  customerId: string;
+  customerCode: string;
+  companyName: string;
+  totalOutstanding: number;
+  aging: {
+    '0-30': number;
+    '31-60': number;
+    '61-90': number;
+    '90+': number;
+  };
+}
+
+export interface PaymentMethodAnalyticsData {
+  method: string;
+  count: number;
+  amount: number;
+  percentage: number;
+}
+
+export interface CollectionForecastDataPoint {
+  period: string;
+  predicted: number;
+  lowerBound: number;
+  upperBound: number;
+}
+
 export interface AnalyticsRepository {
   // Invoice History
   findInvoicesHistory(filters: InvoiceHistoryFilters): Promise<{ data: InvoiceWithRelations[]; total: number }>;
@@ -225,6 +281,15 @@ export interface AnalyticsRepository {
   getLowStockProducts(): Promise<LowStockData[]>;
   getSlowMovingProducts(daysThreshold: number, limit?: number): Promise<SlowMovingProductData[]>;
   getMonthlyComparison(months: number): Promise<MonthlyComparisonData[]>;
+
+  // AR Analytics
+  getCollectionTrend(interval: 'daily' | 'weekly' | 'monthly', startDate?: Date, endDate?: Date): Promise<CollectionTrendDataPoint[]>;
+  getMonthlyCollection(startDate?: Date, endDate?: Date): Promise<MonthlyCollectionDataPoint[]>;
+  getDailyCollection(startDate?: Date, endDate?: Date): Promise<DailyCollectionDataPoint[]>;
+  getTopPayingCustomers(limit: number, startDate?: Date, endDate?: Date): Promise<TopPayingCustomerData[]>;
+  getOutstandingAging(startDate?: Date, endDate?: Date): Promise<OutstandingAgingDataPoint[]>;
+  getPaymentMethodAnalytics(startDate?: Date, endDate?: Date): Promise<PaymentMethodAnalyticsData[]>;
+  getCollectionForecast(months: number): Promise<CollectionForecastDataPoint[]>;
 
   // Global Search
   globalSearch(query: string, limit?: number): Promise<SearchResults>;
@@ -486,9 +551,11 @@ export class AnalyticsRepositoryImpl implements AnalyticsRepository {
     }
 
     const paymentStatusBreakdown: Record<PaymentStatus, number> = {
-      PENDING: 0,
-      PARTIAL: 0,
+      UNPAID: 0,
+      PARTIALLY_PAID: 0,
       PAID: 0,
+      OVERDUE: 0,
+      CANCELLED: 0,
     };
     for (const item of paymentStatusCounts) {
       if (item.paymentStatus in paymentStatusBreakdown) {
@@ -985,30 +1052,20 @@ export class AnalyticsRepositoryImpl implements AnalyticsRepository {
    * Global Search across all entities
    */
   async globalSearch(query: string, limit: number = 10): Promise<SearchResults> {
-    const searchTerm = query.trim();
-    if (!searchTerm) {
-      return { products: [], customers: [], invoices: [], categories: [], brands: [] };
-    }
-
     const [products, customers, invoices, categories, brands] = await Promise.all([
-      // Products
       prisma.product.findMany({
         where: {
           deletedAt: null,
-          isActive: true,
           OR: [
-            { name: { contains: searchTerm, mode: 'insensitive' } },
-            { sku: { contains: searchTerm, mode: 'insensitive' } },
-            { barcode: { contains: searchTerm, mode: 'insensitive' } },
-            { hsnCode: { contains: searchTerm, mode: 'insensitive' } },
-            { searchKeywords: { contains: searchTerm, mode: 'insensitive' } },
+            { name: { contains: query, mode: 'insensitive' } },
+            { sku: { contains: query, mode: 'insensitive' } },
+            { hsnCode: { contains: query, mode: 'insensitive' } },
           ],
         },
-        take: limit,
         select: {
           id: true,
-          sku: true,
           name: true,
+          sku: true,
           hsnCode: true,
           sellingPrice: true,
           currentStock: true,
@@ -1016,22 +1073,20 @@ export class AnalyticsRepositoryImpl implements AnalyticsRepository {
           category: { select: { name: true } },
           brand: { select: { name: true } },
         },
+        take: limit,
       }),
-      // Customers
       prisma.customer.findMany({
         where: {
           deletedAt: null,
           OR: [
-            { companyName: { contains: searchTerm, mode: 'insensitive' } },
-            { customerCode: { contains: searchTerm, mode: 'insensitive' } },
-            { gstNumber: { contains: searchTerm, mode: 'insensitive' } },
-            { panNumber: { contains: searchTerm, mode: 'insensitive' } },
-            { phone: { contains: searchTerm, mode: 'insensitive' } },
-            { email: { contains: searchTerm, mode: 'insensitive' } },
-            { contactPerson: { contains: searchTerm, mode: 'insensitive' } },
+            { companyName: { contains: query, mode: 'insensitive' } },
+            { customerCode: { contains: query, mode: 'insensitive' } },
+            { gstNumber: { contains: query, mode: 'insensitive' } },
+            { contactPerson: { contains: query, mode: 'insensitive' } },
+            { phone: { contains: query, mode: 'insensitive' } },
+            { email: { contains: query, mode: 'insensitive' } },
           ],
         },
-        take: limit,
         select: {
           id: true,
           customerCode: true,
@@ -1044,18 +1099,16 @@ export class AnalyticsRepositoryImpl implements AnalyticsRepository {
           state: true,
           customerType: true,
         },
+        take: limit,
       }),
-      // Invoices
       prisma.invoice.findMany({
         where: {
           OR: [
-            { invoiceNumber: { contains: searchTerm, mode: 'insensitive' } },
-            { customer: { companyName: { contains: searchTerm, mode: 'insensitive' } } },
-            { customer: { customerCode: { contains: searchTerm, mode: 'insensitive' } } },
+            { invoiceNumber: { contains: query, mode: 'insensitive' } },
+            { customer: { companyName: { contains: query, mode: 'insensitive' } } },
+            { customer: { customerCode: { contains: query, mode: 'insensitive' } } },
           ],
         },
-        take: limit,
-        orderBy: { invoiceDate: 'desc' },
         select: {
           id: true,
           invoiceNumber: true,
@@ -1063,28 +1116,39 @@ export class AnalyticsRepositoryImpl implements AnalyticsRepository {
           grandTotal: true,
           status: true,
           paymentStatus: true,
-          customer: { select: { companyName: true, customerCode: true } },
+          customer: {
+            select: {
+              companyName: true,
+              customerCode: true,
+            },
+          },
         },
+        take: limit,
+        orderBy: { invoiceDate: 'desc' },
       }),
-      // Categories
       prisma.category.findMany({
         where: {
           deletedAt: null,
-          isActive: true,
-          name: { contains: searchTerm, mode: 'insensitive' },
+          name: { contains: query, mode: 'insensitive' },
+        },
+        select: {
+          id: true,
+          name: true,
+          description: true,
         },
         take: limit,
-        select: { id: true, name: true, description: true },
       }),
-      // Brands
       prisma.brand.findMany({
         where: {
           deletedAt: null,
-          isActive: true,
-          name: { contains: searchTerm, mode: 'insensitive' },
+          name: { contains: query, mode: 'insensitive' },
+        },
+        select: {
+          id: true,
+          name: true,
+          description: true,
         },
         take: limit,
-        select: { id: true, name: true, description: true },
       }),
     ]);
 
@@ -1146,6 +1210,298 @@ export class AnalyticsRepositoryImpl implements AnalyticsRepository {
         metadata: {},
       })),
     };
+  }
+
+  // ============================================
+  // AR ANALYTICS
+  // ============================================
+
+  /**
+   * Collection Trend - Collection amount over time
+   */
+  async getCollectionTrend(interval: 'daily' | 'weekly' | 'monthly', startDate?: Date, endDate?: Date): Promise<CollectionTrendDataPoint[]> {
+    const now = new Date();
+    const defaultEndDate = endDate ?? now;
+    const defaultStartDate = startDate ?? new Date(now.getFullYear(), now.getMonth() - 11, 1);
+
+    const intervalFormat = interval === 'daily' ? 'day' : interval === 'weekly' ? 'week' : 'month';
+
+    const results = await prisma.$queryRawUnsafe<any[]>(`
+      SELECT 
+        date_trunc($1, "paymentDate") as period,
+        COALESCE(SUM("amount"), 0) as amount,
+        COUNT(*) as count
+      FROM "payments"
+      WHERE "paymentDate" >= $2
+        AND "paymentDate" <= $3
+        AND "isCancelled" = false
+      GROUP BY date_trunc($1, "paymentDate")
+      ORDER BY period ASC
+    `, intervalFormat, defaultStartDate, defaultEndDate);
+
+    return results.map((row): CollectionTrendDataPoint => {
+      const period = row.period != null ? String(new Date(row.period).toISOString().split('T')[0]) : '';
+      return {
+        period,
+        amount: Number(row.amount),
+        count: Number(row.count),
+      };
+    });
+  }
+
+  /**
+   * Monthly Collection - Collection grouped by month
+   */
+  async getMonthlyCollection(startDate?: Date, endDate?: Date): Promise<MonthlyCollectionDataPoint[]> {
+    const now = new Date();
+    const defaultEndDate = endDate ?? now;
+    const defaultStartDate = startDate ?? new Date(now.getFullYear(), now.getMonth() - 11, 1);
+
+    const results = await prisma.$queryRawUnsafe<any[]>(`
+      SELECT 
+        EXTRACT(YEAR FROM "paymentDate") as year,
+        EXTRACT(MONTH FROM "paymentDate") as month,
+        COALESCE(SUM("amount"), 0) as amount,
+        COUNT(*) as count
+      FROM "payments"
+      WHERE "paymentDate" >= $1
+        AND "paymentDate" <= $2
+        AND "isCancelled" = false
+      GROUP BY EXTRACT(YEAR FROM "paymentDate"), EXTRACT(MONTH FROM "paymentDate")
+      ORDER BY year ASC, month ASC
+    `, defaultStartDate, defaultEndDate);
+
+    return results.map(row => ({
+      month: `${Number(row.year)}-${String(Number(row.month)).padStart(2, '0')}`,
+      year: Number(row.year),
+      amount: Number(row.amount),
+      count: Number(row.count),
+    }));
+  }
+
+  /**
+   * Daily Collection - Collection grouped by day
+   */
+  async getDailyCollection(startDate?: Date, endDate?: Date): Promise<DailyCollectionDataPoint[]> {
+    const now = new Date();
+    const defaultEndDate = endDate ?? now;
+    const defaultStartDate = startDate ?? new Date(now.getFullYear(), now.getMonth(), now.getDate() - 30);
+
+    const results = await prisma.$queryRawUnsafe<any[]>(`
+      SELECT 
+        DATE("paymentDate") as date,
+        COALESCE(SUM("amount"), 0) as amount,
+        COUNT(*) as count
+      FROM "payments"
+      WHERE "paymentDate" >= $1
+        AND "paymentDate" <= $2
+        AND "isCancelled" = false
+      GROUP BY DATE("paymentDate")
+      ORDER BY date ASC
+    `, defaultStartDate, defaultEndDate);
+
+    return results.map((row): DailyCollectionDataPoint => {
+      const date = row.date != null ? String(new Date(row.date).toISOString().split('T')[0]) : '';
+      return {
+        date,
+        amount: Number(row.amount),
+        count: Number(row.count),
+      };
+    });
+  }
+
+  /**
+   * Top Paying Customers - Customers with highest payment amounts
+   */
+  async getTopPayingCustomers(limit: number = 10, startDate?: Date, endDate?: Date): Promise<TopPayingCustomerData[]> {
+    const where: Prisma.PaymentWhereInput = { isCancelled: false };
+
+    if (startDate || endDate) {
+      where.paymentDate = {};
+      if (startDate) where.paymentDate.gte = startDate;
+      if (endDate) where.paymentDate.lte = endDate;
+    }
+
+    const topCustomers = await prisma.payment.groupBy({
+      by: ['customerId'],
+      where,
+      _sum: { amount: true },
+      _count: true,
+      orderBy: { _sum: { amount: 'desc' } },
+      take: limit,
+    });
+
+    const customerIds = topCustomers.map(c => c.customerId);
+    const customers = await prisma.customer.findMany({
+      where: { id: { in: customerIds } },
+      select: { id: true, customerCode: true, companyName: true },
+    });
+
+    const customerMap = new Map(customers.map(c => [c.id, c]));
+
+    return topCustomers.map(item => {
+      const customer = customerMap.get(item.customerId);
+      const totalPaid = Number(item._sum.amount ?? 0);
+      return {
+        customerId: item.customerId,
+        customerCode: customer?.customerCode ?? '',
+        companyName: customer?.companyName ?? '',
+        totalPaid,
+        paymentCount: item._count,
+        averagePayment: item._count > 0 ? totalPaid / item._count : 0,
+      };
+    });
+  }
+
+  /**
+   * Outstanding Aging - Customer-wise aging report
+   */
+  async getOutstandingAging(startDate?: Date, endDate?: Date): Promise<OutstandingAgingDataPoint[]> {
+    const now = new Date();
+
+    const customers = await prisma.customer.findMany({
+      where: { deletedAt: null, isActive: true },
+      select: { id: true, customerCode: true, companyName: true },
+    });
+
+    const result = [];
+
+    for (const customer of customers) {
+      const where: Prisma.InvoiceWhereInput = {
+        customerId: customer.id,
+        status: { not: 'CANCELLED' },
+        balanceAmount: { gt: 0 },
+      };
+
+      if (startDate || endDate) {
+        where.invoiceDate = {};
+        if (startDate) where.invoiceDate.gte = startDate;
+        if (endDate) where.invoiceDate.lte = endDate;
+      }
+
+      const invoices = await prisma.invoice.findMany({
+        where,
+        select: { balanceAmount: true, dueDate: true, invoiceDate: true },
+      });
+
+      if (invoices.length === 0) continue;
+
+      let totalOutstanding = 0;
+      const aging = { '0-30': 0, '31-60': 0, '61-90': 0, '90+': 0 };
+
+      for (const inv of invoices) {
+        const balance = Number(inv.balanceAmount);
+        totalOutstanding += balance;
+
+        const referenceDate = inv.dueDate || inv.invoiceDate;
+        const daysOverdue = Math.floor((now.getTime() - new Date(referenceDate).getTime()) / (1000 * 60 * 60 * 24));
+
+        if (daysOverdue <= 30) {
+          aging['0-30'] += balance;
+        } else if (daysOverdue <= 60) {
+          aging['31-60'] += balance;
+        } else if (daysOverdue <= 90) {
+          aging['61-90'] += balance;
+        } else {
+          aging['90+'] += balance;
+        }
+      }
+
+      result.push({
+        customerId: customer.id,
+        customerCode: customer.customerCode,
+        companyName: customer.companyName,
+        totalOutstanding,
+        aging,
+      });
+    }
+
+    result.sort((a, b) => b.totalOutstanding - a.totalOutstanding);
+
+    return result;
+  }
+
+  /**
+   * Payment Method Analytics - Distribution by payment method
+   */
+  async getPaymentMethodAnalytics(startDate?: Date, endDate?: Date): Promise<PaymentMethodAnalyticsData[]> {
+    const where: Prisma.PaymentWhereInput = { isCancelled: false };
+
+    if (startDate || endDate) {
+      where.paymentDate = {};
+      if (startDate) where.paymentDate.gte = startDate;
+      if (endDate) where.paymentDate.lte = endDate;
+    }
+
+    const methodStats = await prisma.payment.groupBy({
+      by: ['paymentMethod'],
+      where,
+      _sum: { amount: true },
+      _count: true,
+    });
+
+    const totalAmount = methodStats.reduce((sum, item) => sum + Number(item._sum.amount ?? 0), 0);
+
+    return methodStats.map(item => ({
+      method: item.paymentMethod,
+      count: item._count,
+      amount: Number(item._sum.amount ?? 0),
+      percentage: totalAmount > 0 ? (Number(item._sum.amount ?? 0) / totalAmount) * 100 : 0,
+    }));
+  }
+
+  /**
+   * Collection Forecast - Simple linear forecast based on historical data
+   */
+  async getCollectionForecast(months: number = 6): Promise<CollectionForecastDataPoint[]> {
+    const now = new Date();
+    const startDate = new Date(now.getFullYear(), now.getMonth() - 12, 1);
+
+    // Get historical monthly collections
+    const historical = await this.getMonthlyCollection(startDate, now);
+
+    if (historical.length < 2) {
+      return [];
+    }
+
+    // Simple linear regression for forecasting
+    const n = historical.length;
+    const xValues = historical.map((_, i) => i + 1);
+    const yValues = historical.map(h => h.amount);
+
+    const sumX = xValues.reduce((a, b) => a + b, 0);
+    const sumY = yValues.reduce((a, b) => a + b, 0);
+    const sumXY = xValues.reduce((sum, x, idx) => sum + x * (yValues[idx] ?? 0), 0);
+    const sumX2 = xValues.reduce((sum, x) => sum + x * x, 0);
+
+    const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+    const intercept = (sumY - slope * sumX) / n;
+
+    // Calculate standard error for confidence intervals
+    const predictions = xValues.map((x) => intercept + slope * x);
+    const residuals = yValues.map((y, idx) => y - (predictions[idx] ?? 0));
+    const mse = residuals.reduce((sum, r) => sum + r * r, 0) / (n - 2);
+    const se = Math.sqrt(mse);
+
+    const forecast: CollectionForecastDataPoint[] = [];
+    const lastX = xValues[xValues.length - 1] ?? n;
+
+    for (let i = 1; i <= months; i++) {
+      const x = lastX + i;
+      const predicted = intercept + slope * x;
+      const margin = 1.96 * se * Math.sqrt(1 + 1/n + Math.pow(x - sumX/n, 2) / (sumX2 - sumX*sumX/n));
+
+      const periodDate = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const period = String(periodDate.toISOString().split('T')[0]);
+      forecast.push({
+        period,
+        predicted: Math.max(0, predicted),
+        lowerBound: Math.max(0, predicted - margin),
+        upperBound: predicted + margin,
+      });
+    }
+
+    return forecast;
   }
 }
 

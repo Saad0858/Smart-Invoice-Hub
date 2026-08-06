@@ -14,6 +14,14 @@ import type {
   SlowMovingProductData,
   LowStockData,
   SearchResults,
+  // AR Analytics
+  CollectionTrendDataPoint,
+  MonthlyCollectionDataPoint,
+  DailyCollectionDataPoint,
+  TopPayingCustomerData,
+  OutstandingAgingDataPoint,
+  PaymentMethodAnalyticsData,
+  CollectionForecastDataPoint,
 } from '@repositories/analytics.repository';
 
 export interface PaginationMeta {
@@ -133,6 +141,59 @@ export class AnalyticsService {
    */
   async globalSearch(query: string, limit: number = 10): Promise<SearchResults> {
     return analyticsRepository.globalSearch(query, limit);
+  }
+
+  // ============================================
+  // AR ANALYTICS
+  // ============================================
+
+  /**
+   * Collection Trend - Collection amount over time
+   */
+  async getCollectionTrend(interval: 'daily' | 'weekly' | 'monthly', startDate?: Date, endDate?: Date): Promise<CollectionTrendDataPoint[]> {
+    return analyticsRepository.getCollectionTrend(interval, startDate, endDate);
+  }
+
+  /**
+   * Monthly Collection - Collection grouped by month
+   */
+  async getMonthlyCollection(startDate?: Date, endDate?: Date): Promise<MonthlyCollectionDataPoint[]> {
+    return analyticsRepository.getMonthlyCollection(startDate, endDate);
+  }
+
+  /**
+   * Daily Collection - Collection grouped by day
+   */
+  async getDailyCollection(startDate?: Date, endDate?: Date): Promise<DailyCollectionDataPoint[]> {
+    return analyticsRepository.getDailyCollection(startDate, endDate);
+  }
+
+  /**
+   * Top Paying Customers - Customers with highest payment amounts
+   */
+  async getTopPayingCustomers(limit: number = 10, startDate?: Date, endDate?: Date): Promise<TopPayingCustomerData[]> {
+    return analyticsRepository.getTopPayingCustomers(limit, startDate, endDate);
+  }
+
+  /**
+   * Outstanding Aging - Customer-wise aging report
+   */
+  async getOutstandingAging(startDate?: Date, endDate?: Date): Promise<OutstandingAgingDataPoint[]> {
+    return analyticsRepository.getOutstandingAging(startDate, endDate);
+  }
+
+  /**
+   * Payment Method Analytics - Distribution by payment method
+   */
+  async getPaymentMethodAnalytics(startDate?: Date, endDate?: Date): Promise<PaymentMethodAnalyticsData[]> {
+    return analyticsRepository.getPaymentMethodAnalytics(startDate, endDate);
+  }
+
+  /**
+   * Collection Forecast - Simple linear forecast based on historical data
+   */
+  async getCollectionForecast(months: number = 6): Promise<CollectionForecastDataPoint[]> {
+    return analyticsRepository.getCollectionForecast(months);
   }
 }
 

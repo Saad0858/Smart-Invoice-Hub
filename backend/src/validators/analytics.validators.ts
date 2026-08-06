@@ -3,7 +3,7 @@ import { z } from 'zod';
 const PERIOD_ENUM = ['daily', 'weekly', 'monthly', 'yearly', 'custom'] as const;
 const INTERVAL_ENUM = ['daily', 'weekly', 'monthly'] as const;
 const INVOICE_STATUS_ENUM = ['DRAFT', 'GENERATED', 'CANCELLED'] as const;
-const PAYMENT_STATUS_ENUM = ['PENDING', 'PARTIAL', 'PAID'] as const;
+const PAYMENT_STATUS_ENUM = ['UNPAID', 'PARTIALLY_PAID', 'PAID', 'OVERDUE', 'CANCELLED'] as const;
 const SORT_ENUM = ['invoiceDate', 'invoiceNumber', 'grandTotal', 'createdAt', 'customerId'] as const;
 
 const dateStringSchema = z.string().refine(
@@ -162,6 +162,72 @@ export const monthlyComparisonQuerySchema = z.object({
 });
 
 // ============================================
+// AR ANALYTICS VALIDATORS
+// ============================================
+
+export const collectionTrendQuerySchema = z.object({
+  query: z.object({
+    interval: z.enum(INTERVAL_ENUM).default('monthly'),
+    ...dateRangeFields,
+  }).refine(dateRangeRefinement, {
+    message: 'startDate must be before endDate',
+    path: ['endDate'],
+  }),
+});
+
+export const monthlyCollectionQuerySchema = z.object({
+  query: z.object({
+    ...dateRangeFields,
+  }).refine(dateRangeRefinement, {
+    message: 'startDate must be before endDate',
+    path: ['endDate'],
+  }),
+});
+
+export const dailyCollectionQuerySchema = z.object({
+  query: z.object({
+    ...dateRangeFields,
+  }).refine(dateRangeRefinement, {
+    message: 'startDate must be before endDate',
+    path: ['endDate'],
+  }),
+});
+
+export const topPayingCustomersQuerySchema = z.object({
+  query: z.object({
+    limit: z.coerce.number().int().min(1).max(100).default(10),
+    ...dateRangeFields,
+  }).refine(dateRangeRefinement, {
+    message: 'startDate must be before endDate',
+    path: ['endDate'],
+  }),
+});
+
+export const outstandingAgingQuerySchema = z.object({
+  query: z.object({
+    ...dateRangeFields,
+  }).refine(dateRangeRefinement, {
+    message: 'startDate must be before endDate',
+    path: ['endDate'],
+  }),
+});
+
+export const paymentMethodAnalyticsQuerySchema = z.object({
+  query: z.object({
+    ...dateRangeFields,
+  }).refine(dateRangeRefinement, {
+    message: 'startDate must be before endDate',
+    path: ['endDate'],
+  }),
+});
+
+export const collectionForecastQuerySchema = z.object({
+  query: z.object({
+    months: z.coerce.number().int().min(1).max(24).default(6),
+  }),
+});
+
+// ============================================
 // GLOBAL SEARCH VALIDATORS
 // ============================================
 
@@ -192,5 +258,14 @@ export type RevenueTrendQuery = z.infer<typeof revenueTrendQuerySchema>['query']
 export type LowStockQuery = z.infer<typeof lowStockQuerySchema>['query'];
 export type SlowMovingQuery = z.infer<typeof slowMovingQuerySchema>['query'];
 export type MonthlyComparisonQuery = z.infer<typeof monthlyComparisonQuerySchema>['query'];
+
+// AR Analytics types
+export type CollectionTrendQuery = z.infer<typeof collectionTrendQuerySchema>['query'];
+export type MonthlyCollectionQuery = z.infer<typeof monthlyCollectionQuerySchema>['query'];
+export type DailyCollectionQuery = z.infer<typeof dailyCollectionQuerySchema>['query'];
+export type TopPayingCustomersQuery = z.infer<typeof topPayingCustomersQuerySchema>['query'];
+export type OutstandingAgingQuery = z.infer<typeof outstandingAgingQuerySchema>['query'];
+export type PaymentMethodAnalyticsQuery = z.infer<typeof paymentMethodAnalyticsQuerySchema>['query'];
+export type CollectionForecastQuery = z.infer<typeof collectionForecastQuerySchema>['query'];
 
 export type GlobalSearchQuery = z.infer<typeof globalSearchQuerySchema>['query'];

@@ -18,6 +18,14 @@ import {
   slowMovingQuerySchema,
   monthlyComparisonQuerySchema,
   globalSearchQuerySchema,
+  // AR Analytics validators
+  collectionTrendQuerySchema,
+  monthlyCollectionQuerySchema,
+  dailyCollectionQuerySchema,
+  topPayingCustomersQuerySchema,
+  outstandingAgingQuerySchema,
+  paymentMethodAnalyticsQuerySchema,
+  collectionForecastQuerySchema,
 } from '@validators/analytics.validators';
 import { authMiddleware } from '@middlewares/auth.middleware';
 import { requireDashboardAccess } from '@middlewares/role.middleware';
@@ -137,6 +145,59 @@ router.get(
   '/monthly-comparison',
   validateQuery(monthlyComparisonQuerySchema),
   asyncHandler(analyticsController.getMonthlyComparison.bind(analyticsController))
+);
+
+// ============================================
+// AR ANALYTICS
+// ============================================
+
+// GET /analytics/ar/collection-trend - Collection trend over time
+router.get(
+  '/ar/collection-trend',
+  validateQuery(collectionTrendQuerySchema),
+  asyncHandler(analyticsController.getCollectionTrend.bind(analyticsController))
+);
+
+// GET /analytics/ar/monthly-collection - Monthly collection summary
+router.get(
+  '/ar/monthly-collection',
+  validateQuery(monthlyCollectionQuerySchema),
+  asyncHandler(analyticsController.getMonthlyCollection.bind(analyticsController))
+);
+
+// GET /analytics/ar/daily-collection - Daily collection summary
+router.get(
+  '/ar/daily-collection',
+  validateQuery(dailyCollectionQuerySchema),
+  asyncHandler(analyticsController.getDailyCollection.bind(analyticsController))
+);
+
+// GET /analytics/ar/top-paying-customers - Top paying customers
+router.get(
+  '/ar/top-paying-customers',
+  validateQuery(topPayingCustomersQuerySchema),
+  asyncHandler(analyticsController.getTopPayingCustomers.bind(analyticsController))
+);
+
+// GET /analytics/ar/outstanding-aging - Outstanding aging report
+router.get(
+  '/ar/outstanding-aging',
+  validateQuery(outstandingAgingQuerySchema),
+  asyncHandler(analyticsController.getOutstandingAging.bind(analyticsController))
+);
+
+// GET /analytics/ar/payment-method-analytics - Payment method distribution analytics
+router.get(
+  '/ar/payment-method-analytics',
+  validateQuery(paymentMethodAnalyticsQuerySchema),
+  asyncHandler(analyticsController.getPaymentMethodAnalytics.bind(analyticsController))
+);
+
+// GET /analytics/ar/collection-forecast - Collection forecast
+router.get(
+  '/ar/collection-forecast',
+  validateQuery(collectionForecastQuerySchema),
+  asyncHandler(analyticsController.getCollectionForecast.bind(analyticsController))
 );
 
 // ============================================
