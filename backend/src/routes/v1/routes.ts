@@ -9,6 +9,10 @@ import customerRoutes from './customer.routes';
 import invoiceRoutes from './invoice.routes';
 import storageRoutes from './storage.routes';
 import dashboardRoutes from './dashboard.routes';
+import analyticsRoutes from './analytics.routes';
+import paymentRoutes from './payment.routes';
+import ledgerRoutes from './ledger.routes';
+import outstandingRoutes from './outstanding.routes';
 
 const router = Router();
 
@@ -22,5 +26,9 @@ router.use('/customers', customerRoutes);
 router.use('/invoices', invoiceRoutes);
 router.use('/storage', storageRoutes);
 router.use('/dashboard', dashboardRoutes);
+router.use('/analytics', analyticsRoutes);
+router.use('/payments', paymentRoutes);
+router.use('/ledger', ledgerRoutes);
+router.use('/outstanding', outstandingRoutes);
 
 export default router;

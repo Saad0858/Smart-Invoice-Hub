@@ -1,20 +1,41 @@
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
 import path from 'path';
-import { env } from '@config/env';
+import fs from 'fs';
 import type { Application } from 'express';
+import { env } from '@config/env';
 
-// Load swagger document synchronously
-// eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-const swaggerDocument = YAML.load(path.join(__dirname, 'docs', 'openapi.yaml')) as Record<string, unknown>;
+// Load OpenAPI YAML
+const swaggerDocument = YAML.load(
+  path.join(__dirname, 'docs', 'openapi.yaml')
+) as Record<string, any>;
+
+// Inject dynamic server URL
+const appUrl =
+  process.env.APP_URL ||
+  `http://localhost:${process.env.PORT || 3000}`;
+
+swaggerDocument.servers = [
+  {
+    url: `${appUrl}${process.env.API_PREFIX || '/api/v1'}`,
+    description:
+      process.env.NODE_ENV === 'production'
+        ? 'Production Server'
+        : 'Development Server',
+  },
+];
 
 export const swaggerOptions = {
   customCss: `
     .swagger-ui .topbar { display: none; }
     .swagger-ui .info .title { color: #2563eb; }
-    .swagger-ui .scheme-container { background: #f8fafc; padding: 1rem; border-radius: 0.5rem; }
+    .swagger-ui .scheme-container {
+      background: #f8fafc;
+      padding: 1rem;
+      border-radius: 0.5rem;
+    }
   `,
-  customSiteTitle: 'BillFlow API Documentation',
+  customSiteTitle: 'Smart Invoice Hub API',
   customfavIcon: '/favicon.ico',
   swaggerOptions: {
     persistAuthorization: true,
@@ -27,15 +48,41 @@ export const swaggerOptions = {
 };
 
 export const setupSwagger = (app: Application): void => {
-  if (env.NODE_ENV !== 'production') {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, swaggerOptions));
+  const swaggerEnabled = process.env.SWAGGER_ENABLED !== 'false';
 
-    // Redirect root to docs in development
+  if (!swaggerEnabled) {
+    return;
+  }
+
+  // Swagger UI
+  app.use(
+    '/api-docs',
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerDocument, swaggerOptions)
+  );
+
+  // OpenAPI JSON
+  app.get('/openapi.json', (_req, res) => {
+    res.json(swaggerDocument);
+  });
+
+  // OpenAPI YAML
+  app.get('/openapi.yaml', (_req, res) => {
+    const yamlPath = path.join(__dirname, 'docs', 'openapi.yaml');
+
+    res.setHeader('Content-Type', 'application/yaml');
+    res.send(fs.readFileSync(yamlPath, 'utf8'));
+  });
+
+  // Development redirect
+  if (env.NODE_ENV === 'development') {
     app.get('/', (_req, res) => {
       res.redirect('/api-docs');
     });
   }
 };
 
-export default { setupSwagger, swaggerOptions };
+export default {
+  setupSwagger,
+  swaggerOptions,
+};

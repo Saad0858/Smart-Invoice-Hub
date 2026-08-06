@@ -8,3 +8,7 @@ export * from './customer.service';
 export * from './invoice.service';
 export * from './invoice-calculation.service';
 export * from './dashboard.service';
+export * from './analytics.service';
+export * from './payment.service';
+export * from './ledger.service';
+export * from './outstanding.service';
