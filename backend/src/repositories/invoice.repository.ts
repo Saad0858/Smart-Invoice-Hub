@@ -175,10 +175,11 @@ export class InvoiceRepositoryImpl implements InvoiceRepository {
         },
       });
 
-      // Create invoice items
+      // Create invoice items with correct invoiceId
       if (items.length > 0) {
+        const itemsWithInvoiceId = items.map(item => ({ ...item, invoiceId: invoice.id }));
         await tx.invoiceItem.createMany({
-          data: items,
+          data: itemsWithInvoiceId,
         });
       }
 

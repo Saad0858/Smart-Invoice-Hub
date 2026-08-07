@@ -348,7 +348,6 @@ export class InvoiceServiceImpl implements InvoiceService {
     };
 
     const itemsData = calculation.items.map((item) => ({
-      invoiceId: '', // Will be set in repository
       productId: item.productId,
       sku: item.sku,
       productName: item.productName,
