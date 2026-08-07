@@ -198,13 +198,12 @@ export class CustomerRepositoryImpl implements CustomerRepository {
     const year = new Date().getFullYear().toString().slice(-2);
     const prefix = `CUST${year}`;
     
-    // Find the latest customer code for this year
+    // Find the latest customer code for this year (including soft-deleted to avoid conflicts)
     const latestCustomer = await prisma.customer.findFirst({
       where: {
         customerCode: {
           startsWith: prefix,
         },
-        deletedAt: null,
       },
       orderBy: {
         customerCode: 'desc',
@@ -222,7 +221,14 @@ export class CustomerRepositoryImpl implements CustomerRepository {
       }
     }
 
-    return `${prefix}${sequence.toString().padStart(4, '0')}`;
+    // Ensure the generated code is unique (handle race conditions and soft-deleted records)
+    let customerCode = `${prefix}${sequence.toString().padStart(4, '0')}`;
+    while (await prisma.customer.findUnique({ where: { customerCode } })) {
+      sequence++;
+      customerCode = `${prefix}${sequence.toString().padStart(4, '0')}`;
+    }
+
+    return customerCode;
   }
 }
 
